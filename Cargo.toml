@@ -1,0 +1,10 @@
+[package]
+name = "rs-pixel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+surf = { version = "2.3.2", features = ["curl-client"] }
+serde_json = "1.0.82"
+chrono = "0.4.19"
+tokio = { version = "1.19.2", features = ["macros", "rt-multi-thread"] }
