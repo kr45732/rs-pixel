@@ -76,6 +76,18 @@ impl GameType {
         GameType(Cow::Borrowed(name), Cow::Borrowed(db_name), id)
     }
 
+    pub fn name(&self) -> String {
+        self.0.to_string()
+    }
+
+    pub fn db_name(&self) -> String {
+        self.1.to_string()
+    }
+
+    pub fn id(&self) -> i32 {
+        self.2
+    }
+
     pub const QUAKECRAFT: GameType = GameType::new("Quakecraft", "Quake", 2);
     pub const WALLS: GameType = GameType::new("Walls", "Walls", 3);
     pub const PAINTBALL: GameType = GameType::new("Paintball", "Paintball", 4);

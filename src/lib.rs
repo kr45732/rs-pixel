@@ -66,14 +66,10 @@ impl RsPixel {
             key: Key::new(key),
         };
 
-        match rs_pixel.simple_get("key".to_string()).await {
-            Ok(_) => {
-                return Ok(rs_pixel);
-            }
-            Err(err) => {
-                return Err(err);
-            }
-        }
+        rs_pixel
+            .simple_get("key".to_string())
+            .await
+            .map(|_| rs_pixel)
     }
 
     pub async fn simple_get(&mut self, path: String) -> Result<Value, RsPixelError> {
