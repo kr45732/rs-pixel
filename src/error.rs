@@ -1,6 +1,5 @@
-use std::fmt;
-
 use serde_json;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum RsPixelError {

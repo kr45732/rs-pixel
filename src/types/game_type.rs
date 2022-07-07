@@ -1,9 +1,8 @@
-use std::{borrow::Cow, fmt};
-
 use serde::{
     de::{self, Visitor},
     Deserialize, Deserializer, Serialize,
 };
+use std::{borrow::Cow, fmt};
 
 #[derive(Serialize, Debug)]
 pub struct GameType(Cow<'static, str>, Cow<'static, str>, i32);
@@ -13,93 +12,99 @@ impl<'de> Deserialize<'de> for GameType {
     where
         D: Deserializer<'de>,
     {
-        struct I32Visitor;
+        struct GameTypeVisitor;
 
-        impl<'de> Visitor<'de> for I32Visitor {
+        impl<'de> Visitor<'de> for GameTypeVisitor {
             type Value = GameType;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("an u64")
+                formatter.write_str("a u64")
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
-                println!("{} d", value);
-                Ok(GameType::QUAKECRAFT)
+                Ok(GameType::from(value))
             }
         }
 
-        // const FIELDS: &'static [&'static str] = &["gameType"];
-        deserializer.deserialize_u64(I32Visitor)
+        deserializer.deserialize_u64(GameTypeVisitor)
+    }
+}
+
+impl From<u64> for GameType {
+    fn from(v: u64) -> Self {
+        match v {
+            2 => GameType::QUAKECRAFT,
+            3 => GameType::WALLS,
+            4 => GameType::PAINTBALL,
+            5 => GameType::SURVIVAL_GAMES,
+            6 => GameType::TNTGAMES,
+            7 => GameType::VAMPIREZ,
+            13 => GameType::WALLS3,
+            14 => GameType::ARCADE,
+            17 => GameType::ARENA,
+            21 => GameType::MCGO,
+            20 => GameType::UHC,
+            23 => GameType::BATTLEGROUND,
+            24 => GameType::SUPER_SMASH,
+            25 => GameType::GINGERBREAD,
+            26 => GameType::HOUSING,
+            51 => GameType::SKYWARS,
+            52 => GameType::TRUE_COMBAT,
+            54 => GameType::SPEED_UHC,
+            55 => GameType::SKYCLASH,
+            56 => GameType::LEGACY,
+            57 => GameType::PROTOTYPE,
+            58 => GameType::BEDWARS,
+            59 => GameType::MURDER_MYSTERY,
+            60 => GameType::BUILD_BATTLE,
+            61 => GameType::DUELS,
+            63 => GameType::SKYBLOCK,
+            64 => GameType::PIT,
+            65 => GameType::REPLAY,
+            67 => GameType::SMP,
+            68 => GameType::WOOL_GAMES,
+            _ => GameType::UNKNOWN,
+        }
     }
 }
 
 impl GameType {
-    pub const QUAKECRAFT: GameType =
-        GameType(Cow::Borrowed("Quakecraft"), Cow::Borrowed("Quake"), 2);
-    pub const WALLS: GameType = GameType(Cow::Borrowed("Walls"), Cow::Borrowed("Walls"), 3);
-    pub const PAINTBALL: GameType =
-        GameType(Cow::Borrowed("Paintball"), Cow::Borrowed("Paintball"), 4);
-    pub const SURVIVAL_GAMES: GameType = GameType(
-        Cow::Borrowed("Blitz Survival Games"),
-        Cow::Borrowed("HungerGames"),
-        5,
-    );
-    pub const TNTGAMES: GameType =
-        GameType(Cow::Borrowed("The TNT Games"), Cow::Borrowed("TNTGames"), 6);
-    pub const VAMPIREZ: GameType =
-        GameType(Cow::Borrowed("VampireZ"), Cow::Borrowed("VampireZ"), 7);
-    pub const WALLS3: GameType = GameType(Cow::Borrowed("Mega Walls"), Cow::Borrowed("Walls3"), 13);
-    pub const ARCADE: GameType = GameType(Cow::Borrowed("Arcade"), Cow::Borrowed("Arcade"), 14);
-    pub const ARENA: GameType = GameType(Cow::Borrowed("Arena Brawl"), Cow::Borrowed("Arena"), 17);
-    pub const MCGO: GameType = GameType(Cow::Borrowed("Cops and Crims"), Cow::Borrowed("MCGO"), 21);
-    pub const UHC: GameType = GameType(Cow::Borrowed("UHC Champions"), Cow::Borrowed("UHC"), 20);
-    pub const BATTLEGROUND: GameType =
-        GameType(Cow::Borrowed("Warlords"), Cow::Borrowed("Battleground"), 23);
-    pub const SUPER_SMASH: GameType = GameType(
-        Cow::Borrowed("Smash Heroes"),
-        Cow::Borrowed("SuperSmash"),
-        24,
-    );
-    pub const GINGERBREAD: GameType = GameType(
-        Cow::Borrowed("Turbo Kart Racers"),
-        Cow::Borrowed("GingerBread"),
-        25,
-    );
-    pub const HOUSING: GameType = GameType(Cow::Borrowed("Housing"), Cow::Borrowed("Housing"), 26);
-    pub const SKYWARS: GameType = GameType(Cow::Borrowed("SkyWars"), Cow::Borrowed("SkyWars"), 51);
-    pub const TRUE_COMBAT: GameType = GameType(
-        Cow::Borrowed("Crazy Walls"),
-        Cow::Borrowed("TrueCombat"),
-        52,
-    );
-    pub const SPEED_UHC: GameType =
-        GameType(Cow::Borrowed("Speed UHC"), Cow::Borrowed("SpeedUHC"), 54);
-    pub const SKYCLASH: GameType =
-        GameType(Cow::Borrowed("SkyClash"), Cow::Borrowed("SkyClash"), 55);
-    pub const LEGACY: GameType =
-        GameType(Cow::Borrowed("Classic Games"), Cow::Borrowed("Legacy"), 56);
-    pub const PROTOTYPE: GameType =
-        GameType(Cow::Borrowed("Prototype"), Cow::Borrowed("Prototype"), 57);
-    pub const BEDWARS: GameType = GameType(Cow::Borrowed("Bed Wars"), Cow::Borrowed("Bedwars"), 58);
-    pub const MURDER_MYSTERY: GameType = GameType(
-        Cow::Borrowed("Murder Mystery"),
-        Cow::Borrowed("MurderMystery"),
-        59,
-    );
-    pub const BUILD_BATTLE: GameType = GameType(
-        Cow::Borrowed("Build Battle"),
-        Cow::Borrowed("BuildBattle"),
-        60,
-    );
-    pub const DUELS: GameType = GameType(Cow::Borrowed("Duels"), Cow::Borrowed("Duels"), 61);
-    pub const SKYBLOCK: GameType =
-        GameType(Cow::Borrowed("SkyBlock"), Cow::Borrowed("SkyBlock"), 63);
-    pub const PIT: GameType = GameType(Cow::Borrowed("Pit"), Cow::Borrowed("Pit"), 64);
-    pub const REPLAY: GameType = GameType(Cow::Borrowed("Replay"), Cow::Borrowed("Replay"), 65);
-    pub const SMP: GameType = GameType(Cow::Borrowed("SMP"), Cow::Borrowed("SMP"), 67);
-    pub const WOOL_GAMES: GameType =
-        GameType(Cow::Borrowed("Wool Wars"), Cow::Borrowed("WoolGames"), 68);
+    pub const fn new(name: &'static str, db_name: &'static str, id: i32) -> GameType {
+        GameType(Cow::Borrowed(name), Cow::Borrowed(db_name), id)
+    }
+
+    pub const QUAKECRAFT: GameType = GameType::new("Quakecraft", "Quake", 2);
+    pub const WALLS: GameType = GameType::new("Walls", "Walls", 3);
+    pub const PAINTBALL: GameType = GameType::new("Paintball", "Paintball", 4);
+    pub const SURVIVAL_GAMES: GameType = GameType::new("Blitz Survival Games", "HungerGames", 5);
+    pub const TNTGAMES: GameType = GameType::new("The TNT Games", "TNTGames", 6);
+    pub const VAMPIREZ: GameType = GameType::new("VampireZ", "VampireZ", 7);
+    pub const WALLS3: GameType = GameType::new("Mega Walls", "Walls3", 13);
+    pub const ARCADE: GameType = GameType::new("Arcade", "Arcade", 14);
+    pub const ARENA: GameType = GameType::new("Arena Brawl", "Arena", 17);
+    pub const MCGO: GameType = GameType::new("Cops and Crims", "MCGO", 21);
+    pub const UHC: GameType = GameType::new("UHC Champions", "UHC", 20);
+    pub const BATTLEGROUND: GameType = GameType::new("Warlords", "Battleground", 23);
+    pub const SUPER_SMASH: GameType = GameType::new("Smash Heroes", "SuperSmash", 24);
+    pub const GINGERBREAD: GameType = GameType::new("Turbo Kart Racers", "GingerBread", 25);
+    pub const HOUSING: GameType = GameType::new("Housing", "Housing", 26);
+    pub const SKYWARS: GameType = GameType::new("SkyWars", "SkyWars", 51);
+    pub const TRUE_COMBAT: GameType = GameType::new("Crazy Walls", "TrueCombat", 52);
+    pub const SPEED_UHC: GameType = GameType::new("Speed UHC", "SpeedUHC", 54);
+    pub const SKYCLASH: GameType = GameType::new("SkyClash", "SkyClash", 55);
+    pub const LEGACY: GameType = GameType::new("Classic Games", "Legacy", 56);
+    pub const PROTOTYPE: GameType = GameType::new("Prototype", "Prototype", 57);
+    pub const BEDWARS: GameType = GameType::new("Bed Wars", "Bedwars", 58);
+    pub const MURDER_MYSTERY: GameType = GameType::new("Murder Mystery", "MurderMystery", 59);
+    pub const BUILD_BATTLE: GameType = GameType::new("Build Battle", "BuildBattle", 60);
+    pub const DUELS: GameType = GameType::new("Duels", "Duels", 61);
+    pub const SKYBLOCK: GameType = GameType::new("SkyBlock", "SkyBlock", 63);
+    pub const PIT: GameType = GameType::new("Pit", "Pit", 64);
+    pub const REPLAY: GameType = GameType::new("Replay", "Replay", 65);
+    pub const SMP: GameType = GameType::new("SMP", "SMP", 67);
+    pub const WOOL_GAMES: GameType = GameType::new("Wool Wars", "WoolGames", 68);
+    pub const UNKNOWN: GameType = GameType::new("Unknown", "Unknown", -1);
 }

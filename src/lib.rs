@@ -1,12 +1,12 @@
+mod error;
+mod response;
+mod types;
+
 use error::RsPixelError;
 use response::{boosters_response::BoostersResponse, key_response::KeyResponse};
 use serde_json::{json, Value};
 use std::time::Duration;
 use surf::Client;
-
-mod error;
-mod response;
-mod types;
 
 struct Key {
     pub key: String,

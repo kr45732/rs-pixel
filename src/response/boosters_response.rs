@@ -25,65 +25,53 @@ pub struct Booster {
     pub game_type: GameType,
     #[serde(rename = "dateActivated")]
     pub date_activated: i64,
-    #[serde(
-        deserialize_with = "deserialize_bool_or_vec",
-        default = "default_resource"
-    )]
-    stacked: Vec<String>,
+    #[serde(deserialize_with = "deserialize_stacked", default = "default_stacked")]
+    pub stacked: Stacked,
 }
 
-impl Booster {
-    fn get_stacked(self) -> Vec<String> {
-        if self.stacked.get(0).is_some() && self.stacked.get(0).unwrap() == "true" {
-            return Vec::new();
-        }
-
-        self.stacked
-    }
-
-    fn queued_to_stack(self) -> bool {
-        self.stacked.get(0).is_some() && self.stacked.get(0).unwrap() == "true"
-    }
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Stacked {
+    QueuedToStack(bool),
+    Stacked(Vec<String>),
 }
 
-fn default_resource() -> Vec<String> {
-    Vec::new()
+fn default_stacked() -> Stacked {
+    Stacked::QueuedToStack(false)
 }
 
-fn deserialize_bool_or_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+fn deserialize_stacked<'de, D>(deserializer: D) -> Result<Stacked, D::Error>
 where
     D: Deserializer<'de>,
 {
-    deserializer.deserialize_any(DeserializeU64OrEmptyStringVisitor)
-}
-struct DeserializeU64OrEmptyStringVisitor;
+    struct DeserializeStackedVisitor;
 
-impl<'de> de::Visitor<'de> for DeserializeU64OrEmptyStringVisitor {
-    type Value = Vec<String>;
+    impl<'de> de::Visitor<'de> for DeserializeStackedVisitor {
+        type Value = Stacked;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("an integer or a string")
-    }
-
-    fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        Ok(vec![v.to_string()])
-    }
-
-    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-    where
-        V: SeqAccess<'de>,
-    {
-        let mut vec = Vec::new();
-
-        while let Some(elem) = visitor.next_element()? {
-            vec.push(elem);
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a Vec<String> or a bool")
         }
 
-        Ok(vec)
+        fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(Stacked::QueuedToStack(v))
+        }
+
+        fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+        where
+            V: SeqAccess<'de>,
+        {
+            let mut vec = Vec::new();
+            while let Some(elem) = visitor.next_element()? {
+                vec.push(elem);
+            }
+            Ok(Stacked::Stacked(vec))
+        }
     }
+
+    deserializer.deserialize_any(DeserializeStackedVisitor)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
