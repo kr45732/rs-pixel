@@ -1,13 +1,16 @@
 use error::RsPixelError;
+use response::key_response::KeyResponse;
 use serde_json::{json, Value};
 use std::time::Duration;
 use surf::Client;
-mod error;
 
-pub struct Key {
+mod error;
+mod response;
+
+struct Key {
     pub key: String,
-    pub remaining_limit: i64,
-    pub time_till_reset: i64,
+    remaining_limit: i64,
+    time_till_reset: i64,
     time: i64,
 }
 
@@ -129,5 +132,13 @@ impl RsPixel {
             }
             Err(err) => Err(RsPixelError::from(err)),
         }
+    }
+
+    pub async fn get_key(&mut self) -> Result<KeyResponse, RsPixelError> {
+        self.simple_get("key".to_string())
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
     }
 }
