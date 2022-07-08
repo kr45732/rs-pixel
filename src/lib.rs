@@ -12,6 +12,7 @@ use response::{
 use serde_json::{json, Value};
 use std::time::Duration;
 use surf::Client;
+use util::minecraft::{self, MinecraftApiType, MinecraftResponse};
 
 struct Key {
     pub key: String,
@@ -56,8 +57,9 @@ impl Key {
 }
 
 pub struct RsPixel {
-    client: Client,
+    pub client: Client,
     key: Key,
+    pub minecraft_api_type: MinecraftApiType,
 }
 
 impl RsPixel {
@@ -69,12 +71,28 @@ impl RsPixel {
         let mut rs_pixel = RsPixel {
             client,
             key: Key::new(key),
+            minecraft_api_type: MinecraftApiType::Ashcon,
         };
 
         rs_pixel
             .simple_get("key".to_string())
             .await
             .map(|_| rs_pixel)
+    }
+
+    pub fn set_minecraft_api_type(&mut self, minecraft_api_type: MinecraftApiType) {
+        self.minecraft_api_type = minecraft_api_type;
+    }
+
+    pub async fn username_to_uuid(
+        &self,
+        username: &str,
+    ) -> Result<MinecraftResponse, RsPixelError> {
+        minecraft::username_to_uuid(self, username).await
+    }
+
+    pub async fn uuid_to_username(&self, uuid: &str) -> Result<MinecraftResponse, RsPixelError> {
+        minecraft::uuid_to_username(self, uuid).await
     }
 
     pub async fn simple_get(&mut self, path: String) -> Result<Value, RsPixelError> {
