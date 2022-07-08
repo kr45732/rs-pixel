@@ -1,9 +1,14 @@
-mod error;
-mod response;
-mod types;
+pub mod error;
+pub mod response;
+pub mod types;
+pub mod util;
 
 use error::RsPixelError;
-use response::{boosters_response::BoostersResponse, key_response::KeyResponse};
+use response::{
+    boosters_response::BoostersResponse, key_response::KeyResponse,
+    leaderboards_response::LeaderboardsResponse, player_response::PlayerResponse,
+    punishment_stats_response::PunishmentStatsResponse,
+};
 use serde_json::{json, Value};
 use std::time::Duration;
 use surf::Client;
@@ -141,6 +146,30 @@ impl RsPixel {
 
     pub async fn get_boosters(&mut self) -> Result<BoostersResponse, RsPixelError> {
         self.simple_get("boosters".to_string())
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_leaderboards(&mut self) -> Result<LeaderboardsResponse, RsPixelError> {
+        self.simple_get("leaderboards".to_string())
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_punishment_stats(&mut self) -> Result<PunishmentStatsResponse, RsPixelError> {
+        self.simple_get("punishmentstats".to_string())
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_player_by_uuid(&mut self, uuid: &str) -> Result<PlayerResponse, RsPixelError> {
+        self.get("player".to_string(), json!({ "uuid": uuid }))
             .await
             .and_then(|response| {
                 serde_json::from_value(response).map_err(|err| RsPixelError::from(err))

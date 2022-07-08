@@ -4,7 +4,7 @@ use serde::{
 };
 use std::{borrow::Cow, fmt};
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, PartialEq, Eq, Hash)]
 pub struct GameType(Cow<'static, str>, Cow<'static, str>, i32);
 
 impl<'de> Deserialize<'de> for GameType {
@@ -27,9 +27,16 @@ impl<'de> Deserialize<'de> for GameType {
             {
                 Ok(GameType::from(value))
             }
+
+            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(GameType::from(value))
+            }
         }
 
-        deserializer.deserialize_u64(GameTypeVisitor)
+        deserializer.deserialize_any(GameTypeVisitor)
     }
 }
 
@@ -66,6 +73,45 @@ impl From<u64> for GameType {
             65 => GameType::REPLAY,
             67 => GameType::SMP,
             68 => GameType::WOOL_GAMES,
+            _ => GameType::UNKNOWN,
+        }
+    }
+}
+
+impl From<String> for GameType {
+    fn from(v: String) -> Self {
+        let v_str = v.as_str();
+        match v_str {
+            "QUAKECRAFT" => GameType::QUAKECRAFT,
+            "WALLS" => GameType::WALLS,
+            "PAINTBALL" => GameType::PAINTBALL,
+            "SURVIVAL_GAMES" => GameType::SURVIVAL_GAMES,
+            "TNTGAMES" => GameType::TNTGAMES,
+            "VAMPIREZ" => GameType::VAMPIREZ,
+            "WALLS3" => GameType::WALLS3,
+            "ARCADE" => GameType::ARCADE,
+            "ARENA" => GameType::ARENA,
+            "MCGO" => GameType::MCGO,
+            "UHC" => GameType::UHC,
+            "BATTLEGROUND" => GameType::BATTLEGROUND,
+            "SUPER_SMASH" => GameType::SUPER_SMASH,
+            "GINGERBREAD" => GameType::GINGERBREAD,
+            "HOUSING" => GameType::HOUSING,
+            "SKYWARS" => GameType::SKYWARS,
+            "TRUE_COMBAT" => GameType::TRUE_COMBAT,
+            "SPEED_UHC" => GameType::SPEED_UHC,
+            "SKYCLASH" => GameType::SKYCLASH,
+            "LEGACY" => GameType::LEGACY,
+            "PROTOTYPE" => GameType::PROTOTYPE,
+            "BEDWARS" => GameType::BEDWARS,
+            "MURDER_MYSTERY" => GameType::MURDER_MYSTERY,
+            "BUILD_BATTLE" => GameType::BUILD_BATTLE,
+            "DUELS" => GameType::DUELS,
+            "SKYBLOCK" => GameType::SKYBLOCK,
+            "PIT" => GameType::PIT,
+            "REPLAY" => GameType::REPLAY,
+            "SMP" => GameType::SMP,
+            "WOOL_GAMES" => GameType::WOOL_GAMES,
             _ => GameType::UNKNOWN,
         }
     }
