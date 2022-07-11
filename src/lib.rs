@@ -5,9 +5,20 @@ pub mod util;
 
 use error::RsPixelError;
 use response::{
-    boosters_response::BoostersResponse, key_response::KeyResponse,
-    leaderboards_response::LeaderboardsResponse, player_response::PlayerResponse,
+    boosters_response::BoostersResponse,
+    counts_response::CountsResponse,
+    friends_response::FriendsResponse,
+    guild_response::GuildResponse,
+    key_response::KeyResponse,
+    leaderboards_response::LeaderboardsResponse,
+    player_response::PlayerResponse,
     punishment_stats_response::PunishmentStatsResponse,
+    recent_games_response::RecentGamesResponse,
+    skyblock::{
+        skyblock_profile_response::SkyblockProfileResponse,
+        skyblock_profiles_response::SkyblockProfilesResponse,
+    },
+    status_response::StatusResponse,
 };
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -74,10 +85,7 @@ impl RsPixel {
             minecraft_api_type: MinecraftApiType::Ashcon,
         };
 
-        rs_pixel
-            .simple_get("key".to_string())
-            .await
-            .map(|_| rs_pixel)
+        rs_pixel.simple_get("key").await.map(|_| rs_pixel)
     }
 
     pub fn set_minecraft_api_type(&mut self, minecraft_api_type: MinecraftApiType) {
@@ -95,11 +103,11 @@ impl RsPixel {
         minecraft::uuid_to_username(self, uuid).await
     }
 
-    pub async fn simple_get(&mut self, path: String) -> Result<Value, RsPixelError> {
+    pub async fn simple_get(&mut self, path: &str) -> Result<Value, RsPixelError> {
         self.get(path, json!({})).await
     }
 
-    pub async fn get(&mut self, path: String, params: Value) -> Result<Value, RsPixelError> {
+    pub async fn get(&mut self, path: &str, params: Value) -> Result<Value, RsPixelError> {
         if self.key.is_rate_limited() {
             let time_till_reset = self.key.get_time_till_reset();
             println!("Sleeping for {} seconds", time_till_reset);
@@ -155,31 +163,25 @@ impl RsPixel {
     }
 
     pub async fn get_key(&mut self) -> Result<KeyResponse, RsPixelError> {
-        self.simple_get("key".to_string())
-            .await
-            .and_then(|response| {
-                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
-            })
+        self.simple_get("key").await.and_then(|response| {
+            serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+        })
     }
 
     pub async fn get_boosters(&mut self) -> Result<BoostersResponse, RsPixelError> {
-        self.simple_get("boosters".to_string())
-            .await
-            .and_then(|response| {
-                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
-            })
+        self.simple_get("boosters").await.and_then(|response| {
+            serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+        })
     }
 
     pub async fn get_leaderboards(&mut self) -> Result<LeaderboardsResponse, RsPixelError> {
-        self.simple_get("leaderboards".to_string())
-            .await
-            .and_then(|response| {
-                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
-            })
+        self.simple_get("leaderboards").await.and_then(|response| {
+            serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+        })
     }
 
     pub async fn get_punishment_stats(&mut self) -> Result<PunishmentStatsResponse, RsPixelError> {
-        self.simple_get("punishmentstats".to_string())
+        self.simple_get("punishmentstats")
             .await
             .and_then(|response| {
                 serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
@@ -187,7 +189,106 @@ impl RsPixel {
     }
 
     pub async fn get_player_by_uuid(&mut self, uuid: &str) -> Result<PlayerResponse, RsPixelError> {
-        self.get("player".to_string(), json!({ "uuid": uuid }))
+        self.get("player", json!({ "uuid": uuid }))
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_player_by_username(
+        &mut self,
+        username: &str,
+    ) -> Result<PlayerResponse, RsPixelError> {
+        let minecraft_response = self.username_to_uuid(username).await?;
+
+        self.get_player_by_uuid(&minecraft_response.uuid.as_str())
+            .await
+    }
+
+    pub async fn get_friends(&mut self, uuid: &str) -> Result<FriendsResponse, RsPixelError> {
+        self.get("friends", json!({ "uuid": uuid }))
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    async fn get_guild(&mut self, key: &str, value: &str) -> Result<GuildResponse, RsPixelError> {
+        self.get("guild", json!({ key: value }))
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_guild_by_player(&mut self, uuid: &str) -> Result<GuildResponse, RsPixelError> {
+        self.get_guild("player", uuid).await
+    }
+
+    pub async fn get_guild_by_name(&mut self, name: &str) -> Result<GuildResponse, RsPixelError> {
+        self.get_guild("name", name).await
+    }
+
+    pub async fn get_guild_by_id(&mut self, id: &str) -> Result<GuildResponse, RsPixelError> {
+        self.get_guild("id", id).await
+    }
+
+    pub async fn get_counts(&mut self) -> Result<CountsResponse, RsPixelError> {
+        self.simple_get("counts").await.and_then(|response| {
+            serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+        })
+    }
+
+    pub async fn get_status(&mut self, uuid: &str) -> Result<StatusResponse, RsPixelError> {
+        self.get("status", json!({ "uuid": uuid }))
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_recent_games(
+        &mut self,
+        uuid: &str,
+    ) -> Result<RecentGamesResponse, RsPixelError> {
+        self.get("recentGames", json!({ "uuid": uuid }))
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_skyblock_profiles_by_uuid(
+        &mut self,
+        uuid: &str,
+    ) -> Result<SkyblockProfilesResponse, RsPixelError> {
+        self.get("skyblock/profiles", json!({ "uuid": uuid }))
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+            .map(|mut response: SkyblockProfilesResponse| {
+                response.set_uuid(uuid);
+                return response;
+            })
+    }
+
+    pub async fn get_skyblock_profiles_by_name(
+        &mut self,
+        username: &str,
+    ) -> Result<SkyblockProfilesResponse, RsPixelError> {
+        let minecraft_response = self.username_to_uuid(username).await?;
+
+        self.get_skyblock_profiles_by_uuid(&minecraft_response.uuid.as_str())
+            .await
+    }
+
+    pub async fn get_skyblock_profile(
+        &mut self,
+        profile: &str,
+    ) -> Result<SkyblockProfileResponse, RsPixelError> {
+        self.get("skyblock/profile", json!({ "profile": profile }))
             .await
             .and_then(|response| {
                 serde_json::from_value(response).map_err(|err| RsPixelError::from(err))

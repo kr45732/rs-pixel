@@ -5,7 +5,7 @@ use serde::{
 use std::{borrow::Cow, fmt};
 
 #[derive(Serialize, Debug, PartialEq, Eq, Hash)]
-pub struct GameType(Cow<'static, str>, Cow<'static, str>, i32);
+pub struct GameType(Cow<'static, str>, Cow<'static, str>, i64);
 
 impl<'de> Deserialize<'de> for GameType {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -18,7 +18,7 @@ impl<'de> Deserialize<'de> for GameType {
             type Value = GameType;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a u64")
+                formatter.write_str("a u64 or String")
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
@@ -118,7 +118,7 @@ impl From<String> for GameType {
 }
 
 impl GameType {
-    pub const fn new(name: &'static str, db_name: &'static str, id: i32) -> GameType {
+    pub const fn new(name: &'static str, db_name: &'static str, id: i64) -> GameType {
         GameType(Cow::Borrowed(name), Cow::Borrowed(db_name), id)
     }
 
@@ -130,7 +130,7 @@ impl GameType {
         self.1.to_string()
     }
 
-    pub fn id(&self) -> i32 {
+    pub fn id(&self) -> i64 {
         self.2
     }
 

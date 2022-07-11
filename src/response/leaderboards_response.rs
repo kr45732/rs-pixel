@@ -12,7 +12,7 @@ pub struct LeaderboardsResponse {
 pub struct Leaderboard {
     pub path: String,
     pub prefix: String,
-    pub count: i32,
+    pub count: i64,
     pub leaders: Vec<String>,
     pub title: String,
 }

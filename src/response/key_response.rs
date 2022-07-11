@@ -10,9 +10,9 @@ pub struct KeyResponse {
 pub struct Record {
     pub key: String,
     pub owner: String,
-    pub limit: i32,
+    pub limit: i64,
     #[serde(rename = "queriesInPastMin")]
-    pub queries_in_past_min: i32,
+    pub queries_in_past_min: i64,
     #[serde(rename = "totalQueries")]
-    pub total_queries: i32,
+    pub total_queries: i64,
 }

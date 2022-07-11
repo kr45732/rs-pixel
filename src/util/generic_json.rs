@@ -25,6 +25,16 @@ where
         let mut cur_raw = self.raw();
 
         while let Some(path) = paths.next() {
+            if cur_raw.is_array() {
+                if let Some(idx) = path.parse::<usize>().ok() {
+                    match cur_raw.get(idx) {
+                        Some(new_raw) => cur_raw = new_raw,
+                        None => return None,
+                    };
+                    continue;
+                }
+            }
+
             match cur_raw.get(path) {
                 Some(new_raw) => cur_raw = new_raw,
                 None => return None,
@@ -45,7 +55,9 @@ where
     }
 
     fn get_float_property(&self, full_path: &str) -> Option<f64> {
-        self.get_property(full_path).and_then(|v| v.as_f64())
+        self.get_property(full_path)
+            .and_then(|v| v.as_f64())
+            .or(self.get_int_property(full_path).map(|v| v as f64))
     }
 
     fn get_array_property(&self, full_path: &str) -> Option<&Vec<Value>> {

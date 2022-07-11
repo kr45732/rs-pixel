@@ -19,13 +19,13 @@ pub struct Booster {
     pub purchaser_uuid: String,
     pub amount: f64,
     #[serde(rename = "originalLength")]
-    pub original_length: i32,
-    pub length: i32,
+    pub original_length: i64,
+    pub length: i64,
     #[serde(rename = "gameType")]
     pub game_type: GameType,
     #[serde(rename = "dateActivated")]
     pub date_activated: i64,
-    #[serde(deserialize_with = "deserialize_stacked", default = "default_stacked")]
+    #[serde(deserialize_with = "deserialize_stacked", default = "Default::default")]
     pub stacked: Stacked,
 }
 
@@ -35,8 +35,28 @@ pub enum Stacked {
     Stacked(Vec<String>),
 }
 
-fn default_stacked() -> Stacked {
-    Stacked::QueuedToStack(false)
+impl Default for Stacked {
+    fn default() -> Self {
+        Stacked::QueuedToStack(false)
+    }
+}
+
+impl Stacked {
+    pub fn get_queued_to_stack(&self) -> Option<&bool> {
+        if let Stacked::QueuedToStack(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_stacked(&self) -> Option<&Vec<String>> {
+        if let Stacked::Stacked(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
 }
 
 fn deserialize_stacked<'de, D>(deserializer: D) -> Result<Stacked, D::Error>

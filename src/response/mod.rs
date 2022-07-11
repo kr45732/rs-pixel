@@ -1,5 +1,11 @@
 pub mod boosters_response;
+pub mod counts_response;
+pub mod friends_response;
+pub mod guild_response;
 pub mod key_response;
 pub mod leaderboards_response;
 pub mod player_response;
 pub mod punishment_stats_response;
+pub mod recent_games_response;
+pub mod skyblock;
+pub mod status_response;
