@@ -24,6 +24,19 @@ impl SkyblockProfilesResponse {
                 last_played_profile = Some(profile);
             }
         }
+
         last_played_profile
+    }
+
+    pub fn get_profile_by_name(&self, profile_name: &str) -> Option<&SkyblockProfile> {
+        for profile in &self.profiles {
+            if let Some(cur_profile_name) = &profile.cute_name {
+                if cur_profile_name == profile_name {
+                    return Some(profile);
+                }
+            }
+        }
+
+        None
     }
 }

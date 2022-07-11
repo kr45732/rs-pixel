@@ -51,13 +51,19 @@ where
     fn get_int_property(&self, full_path: &str) -> Option<i64> {
         self.get_property(full_path)
             .and_then(|v| v.as_i64())
-            .or(self.get_float_property(full_path).map(|v| v as i64))
+            .or(self
+                .get_property(full_path)
+                .and_then(|v| v.as_f64())
+                .map(|v| v as i64))
     }
 
     fn get_float_property(&self, full_path: &str) -> Option<f64> {
         self.get_property(full_path)
             .and_then(|v| v.as_f64())
-            .or(self.get_int_property(full_path).map(|v| v as f64))
+            .or(self
+                .get_property(full_path)
+                .and_then(|v| v.as_i64())
+                .map(|v| v as f64))
     }
 
     fn get_array_property(&self, full_path: &str) -> Option<&Vec<Value>> {

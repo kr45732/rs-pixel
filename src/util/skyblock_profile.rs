@@ -1,3 +1,7 @@
+use super::skills_struct::SkillsStruct;
+use crate::util::constants::{
+    CATACOMBS_XP, HOTM_XP, LEVELING_CAPS, LEVELING_XP, RUNECRAFTING_XP, SOCIAL_XP,
+};
 use crate::{
     types::gamemode::Gamemode,
     util::generic_json::{Property, Raw},
@@ -80,6 +84,111 @@ impl SkyblockProfile {
     pub fn get_player_array_property(&self, full_path: &str) -> Option<&Vec<Value>> {
         self.get_player_property(full_path)
             .and_then(|v| v.as_array())
+    }
+
+    pub fn get_purse_coins(&self) -> Option<f64> {
+        self.get_player_float_property("coin_purse")
+    }
+
+    pub fn get_skill(&self, skill_name: &str) -> Option<SkillsStruct> {
+        if let Some(skill_exp) = self.get_player_int_property(
+            format!(
+                "experience_skill_{}",
+                if skill_name == "social" {
+                    "social2"
+                } else {
+                    skill_name
+                }
+            )
+            .as_str(),
+        ) {
+            return self.skill_exp_to_info(skill_name, skill_exp);
+        }
+
+        None
+    }
+
+    pub fn skill_exp_to_info(&self, skill_name: &str, skill_exp: i64) -> Option<SkillsStruct> {
+        let leveling_table = match skill_name {
+            "catacombs" => *CATACOMBS_XP,
+            "runecrafting" => *RUNECRAFTING_XP,
+            "social" => *SOCIAL_XP,
+            "HOTM" => *HOTM_XP,
+            _ => *LEVELING_XP,
+        };
+        let max_level = self.get_skill_max_level(skill_name);
+
+        if skill_exp == 0 {
+            return Some(SkillsStruct {
+                name: skill_name.to_string(),
+                current_level: 0,
+                max_level,
+                total_exp: 0,
+                exp_current: 0,
+                exp_for_next: 0,
+                progress_to_next: 0.0,
+            });
+        }
+
+        let mut xp_total = 0;
+        let mut level = 1;
+        for i in 0..max_level {
+            let cur_xp_needed = leveling_table[i as usize];
+            xp_total += cur_xp_needed;
+
+            if xp_total > skill_exp {
+                xp_total -= cur_xp_needed;
+                break;
+            } else {
+                level = i + 1;
+            }
+        }
+
+        let xp_current = skill_exp - xp_total;
+        let xp_for_next = if level < max_level {
+            leveling_table[level as usize]
+        } else {
+            0
+        };
+
+        let progress = if xp_for_next > 0 {
+            (xp_current as f64 / xp_for_next as f64).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+
+        Some(SkillsStruct {
+            name: skill_name.to_string(),
+            current_level: level,
+            max_level,
+            total_exp: skill_exp,
+            exp_current: xp_current,
+            exp_for_next: xp_for_next,
+            progress_to_next: progress,
+        })
+    }
+
+    pub fn get_skill_max_level(&self, skill_name: &str) -> i64 {
+        let max_level = LEVELING_CAPS.get(skill_name).unwrap_or(&50);
+
+        if skill_name == "farming" {
+            max_level + self.get_farming_cap_upgrade()
+        } else {
+            *max_level
+        }
+    }
+
+    pub fn get_farming_cap_upgrade(&self) -> i64 {
+        self.get_player_int_property("jacob2.perks.farming_level_cap")
+            .unwrap_or(0)
+    }
+
+    pub fn get_hotm(&self) -> Option<SkillsStruct> {
+        if let Some(xp) = self.get_player_int_property("mining_core.experience") {
+            self.skill_exp_to_info("hotm", xp)
+        } else {
+            None
+        }
     }
 }
 
