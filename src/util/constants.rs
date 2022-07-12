@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 
 lazy_static! {
-    // Leveling data taken from NotEnoughUpdates-REPO (https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO/blob/master/constants/leveling.json)
-
-    pub static ref LEVELING_XP: &'static [i64] = &[
+    // Leveling data from [NotEnoughUpdates-REPO](https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO/)
+    pub static ref LEVELING_EXP: &'static [i64] = &[
         50, 125, 200, 300, 500, 750, 1000, 1500, 2000, 3500, 5000, 7500, 10000, 15000, 20000,
         30000, 50000, 75000, 100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000,
         900000, 1000000, 1100000, 1200000, 1300000, 1400000, 1500000, 1600000, 1700000, 1800000,
@@ -13,16 +12,16 @@ lazy_static! {
         3100000, 3400000, 3700000, 4000000, 4300000, 4600000, 4900000, 5200000, 5500000, 5800000,
         6100000, 6400000, 6700000, 7000000,
     ];
-    pub static ref RUNECRAFTING_XP: &'static [i64] = &[
+    pub static ref RUNECRAFTING_EXP: &'static [i64] = &[
         50, 100, 125, 160, 200, 250, 315, 400, 500, 625, 785, 1000, 1250, 1600, 2000, 2465, 3125,
         4000, 5000, 6200, 7800, 9800, 12200, 15300, 19050,
     ];
-    pub static ref HOTM_XP: &'static [i64] = &[0, 3000, 9000, 25000, 60000, 100000, 150000];
-    pub static ref SOCIAL_XP: &'static [i64] = &[
+    pub static ref HOTM_EXP: &'static [i64] = &[0, 3000, 9000, 25000, 60000, 100000, 150000];
+    pub static ref SOCIAL_EXP: &'static [i64] = &[
         50, 100, 150, 250, 500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 3750, 4500, 6000, 8000,
         10000, 12500, 15000, 20000, 25000, 30000, 35000, 40000, 50000,
     ];
-    pub static ref CATACOMBS_XP: &'static [i64] = &[
+    pub static ref CATACOMBS_EXP: &'static [i64] = &[
         50, 75, 110, 160, 230, 330, 470, 670, 950, 1340, 1890, 2665, 3760, 5260, 7380, 10300,
         14400, 20000, 27600, 38000, 52500, 71500, 97000, 132000, 180000, 243000, 328000, 445000,
         600000, 800000, 1065000, 1410000, 1900000, 2500000, 3300000, 4300000, 5600000, 7200000,
@@ -44,6 +43,37 @@ lazy_static! {
         m.insert("catacombs", 50);
         m.insert("hotm", 7);
         m.insert("social", 25);
+        m.insert("wolf", 9);
+        m.insert("spider", 9);
+        m.insert("zombie", 9);
+        m.insert("enderman", 9);
+        m.insert("blaze", 9);
         m
     };
+    pub static ref ZOMBIE_EXP: &'static [i64] = &[5, 15, 200, 1000, 5000, 20000, 100000, 400000, 1000000];
+    pub static ref SPIDER_EXP: &'static [i64] = &[5, 15, 200, 1000, 5000, 20000, 100000, 400000, 1000000];
+    pub static ref WOLF_EXP: &'static [i64] = &[10, 30, 250, 1500, 5000, 20000, 100000, 400000, 1000000];
+    pub static ref ENDERMAN_EXP: &'static [i64] = &[10, 30, 250, 1500, 5000, 20000, 100000, 400000, 1000000];
+    pub static ref BLAZE_EXP: &'static [i64] = &[10, 30, 250, 1500, 5000, 20000, 100000, 400000, 1000000];
+    pub static ref PET_RARITY_OFFSET: HashMap<&'static str, i64> = {
+        let mut m = HashMap::new();
+        m.insert("COMMON", 0);
+        m.insert("UNCOMMON",6);
+        m.insert("RARE", 11);
+        m.insert("EPIC", 16);
+        m.insert("LEGENDARY", 20);
+        m.insert("MYTHIC", 20);
+        m
+    };
+    pub static ref PET_EXP: &'static [i64] = &[
+        100, 110, 120, 130, 145, 160, 175, 190, 210, 230, 250, 275, 300, 330, 360, 400, 440, 490, 540,
+        600, 660, 730, 800, 880, 960, 1050, 1150, 1260, 1380, 1510, 1650, 1800, 1960, 2130, 2310, 2500,
+        2700, 2920, 3160, 3420, 3700, 4000, 4350, 4750, 5200, 5700, 6300, 7000, 7800, 8700, 9700,
+        10800, 12000, 13300, 14700, 16200, 17800, 19500, 21300, 23200, 25200, 27400, 29800, 32400,
+        35200, 38200, 41400, 44800, 48400, 52200, 56200, 60400, 64800, 69400, 74200, 79200, 84700,
+        90700, 97200, 104200, 111700, 119700, 128200, 137200, 146700, 156700, 167700, 179700, 192700,
+        206700, 221700, 237700, 254700, 272700, 291700, 311700, 333700, 357700, 383700, 411700, 441700,
+        476700, 516700, 561700, 611700, 666700, 726700, 791700, 861700, 936700, 1016700, 1101700,
+        1191700, 1286700, 1386700, 1496700, 1616700, 1746700, 1886700,
+    ];
 }

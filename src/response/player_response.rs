@@ -19,11 +19,11 @@ impl Raw for PlayerResponse {
 
 impl PlayerResponse {
     pub fn get_uuid(&self) -> Option<&str> {
-        self.get_string_property("uuid")
+        self.get_str_property("uuid")
     }
 
     pub fn get_name(&self) -> Option<&str> {
-        match self.get_string_property("displayname") {
+        match self.get_str_property("displayname") {
             Some(name) => Some(name),
             None => {
                 match self
@@ -36,8 +36,8 @@ impl PlayerResponse {
                     }
                     None => {
                         return self
-                            .get_string_property("playername")
-                            .or(self.get_string_property("username"))
+                            .get_str_property("playername")
+                            .or(self.get_str_property("username"))
                     }
                 }
             }
@@ -61,15 +61,15 @@ impl PlayerResponse {
 
     pub fn get_rank(&self) -> &str {
         if self.has_rank_in_field("rank") {
-            return self.get_string_property("rank").unwrap_or("NONE");
+            return self.get_str_property("rank").unwrap_or("NONE");
         } else if self.has_rank_in_field("monthlyPackageRank") {
             return self
-                .get_string_property("monthlyPackageRank")
+                .get_str_property("monthlyPackageRank")
                 .unwrap_or("NONE");
         } else if self.has_rank_in_field("newPackageRank") {
-            return self.get_string_property("newPackageRank").unwrap_or("NONE");
+            return self.get_str_property("newPackageRank").unwrap_or("NONE");
         } else if self.has_rank_in_field("packageRank") {
-            return self.get_string_property("packageRank").unwrap_or("NONE");
+            return self.get_str_property("packageRank").unwrap_or("NONE");
         }
 
         return "NONE";
@@ -80,7 +80,7 @@ impl PlayerResponse {
     }
 
     fn has_rank_in_field(&self, name: &str) -> bool {
-        let value = self.get_string_property(name).unwrap_or("NONE");
+        let value = self.get_str_property(name).unwrap_or("NONE");
         !value.is_empty() && value != "NONE" && value != "NORMAL"
     }
 }

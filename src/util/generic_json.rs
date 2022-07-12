@@ -1,4 +1,4 @@
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 pub trait Raw {
     fn raw(&self) -> &Value;
@@ -6,10 +6,12 @@ pub trait Raw {
 
 pub trait Property {
     fn get_property(&self, full_path: &str) -> Option<&Value>;
-    fn get_string_property(&self, full_path: &str) -> Option<&str>;
+    fn get_str_property(&self, full_path: &str) -> Option<&str>;
+    fn get_string_property(&self, full_path: &str) -> Option<String>;
     fn get_int_property(&self, full_path: &str) -> Option<i64>;
     fn get_float_property(&self, full_path: &str) -> Option<f64>;
     fn get_array_property(&self, full_path: &str) -> Option<&Vec<Value>>;
+    fn get_object_property(&self, full_path: &str) -> Option<&Map<String, Value>>;
 }
 
 impl<T> Property for T
@@ -44,8 +46,14 @@ where
         Some(cur_raw)
     }
 
-    fn get_string_property(&self, full_path: &str) -> Option<&str> {
+    fn get_str_property(&self, full_path: &str) -> Option<&str> {
         self.get_property(full_path).and_then(|v| v.as_str())
+    }
+
+    fn get_string_property(&self, full_path: &str) -> Option<String> {
+        self.get_property(full_path)
+            .and_then(|v| v.as_str())
+            .map(|v| v.to_string())
     }
 
     fn get_int_property(&self, full_path: &str) -> Option<i64> {
@@ -68,5 +76,15 @@ where
 
     fn get_array_property(&self, full_path: &str) -> Option<&Vec<Value>> {
         self.get_property(full_path).and_then(|v| v.as_array())
+    }
+
+    fn get_object_property(&self, full_path: &str) -> Option<&Map<String, Value>> {
+        self.get_property(full_path).and_then(|v| v.as_object())
+    }
+}
+
+impl Raw for Value {
+    fn raw(&self) -> &Value {
+        self
     }
 }
