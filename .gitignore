@@ -1,5 +1,6 @@
 /target
 .DS_Store
+/.vscode
 
 # Testing purposes
 main.rs

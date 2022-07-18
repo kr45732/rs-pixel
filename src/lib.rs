@@ -15,6 +15,12 @@ use response::{
     punishment_stats_response::PunishmentStatsResponse,
     recent_games_response::RecentGamesResponse,
     skyblock::{
+        skyblock_auctions_response::SkyblockAuctionsResponse,
+        skyblock_bazaar_response::SkyblockBazaarResponse,
+        skyblock_bingo_response::SkyblockBingoResponse,
+        skyblock_ended_auctions_response::SkyblockEndedAuctionsResponse,
+        skyblock_fire_sales_response::SkyblockFireSalesResponse,
+        skyblock_news_response::SkyblockNewsResponse,
         skyblock_profile_response::SkyblockProfileResponse,
         skyblock_profiles_response::SkyblockProfilesResponse,
     },
@@ -67,10 +73,54 @@ impl Key {
     }
 }
 
-pub struct RsPixel {
+pub struct Config {
     pub client: Client,
-    key: Key,
     pub minecraft_api_type: MinecraftApiType,
+}
+
+impl Config {
+    pub fn new() -> ConfigBuilder {
+        ConfigBuilder {
+            client: None,
+            minecraft_api_type: None,
+        }
+    }
+}
+
+pub struct ConfigBuilder {
+    client: Option<Client>,
+    minecraft_api_type: Option<MinecraftApiType>,
+}
+
+impl ConfigBuilder {
+    pub fn client(mut self, client: Client) -> ConfigBuilder {
+        self.client = Some(client);
+        self
+    }
+
+    pub fn minecraft_api_type(mut self, minecraft_api_type: MinecraftApiType) -> ConfigBuilder {
+        self.minecraft_api_type = Some(minecraft_api_type);
+        self
+    }
+}
+
+impl Into<Config> for ConfigBuilder {
+    fn into(self) -> Config {
+        Config {
+            client: self.client.unwrap_or(
+                surf::Config::new()
+                    .set_timeout(Some(Duration::from_secs(15)))
+                    .try_into()
+                    .unwrap(),
+            ),
+            minecraft_api_type: self.minecraft_api_type.unwrap_or(MinecraftApiType::Ashcon),
+        }
+    }
+}
+
+pub struct RsPixel {
+    pub config: Config,
+    key: Key,
 }
 
 impl RsPixel {
@@ -80,16 +130,23 @@ impl RsPixel {
             .try_into()
             .unwrap();
         let mut rs_pixel = RsPixel {
-            client,
+            config: Config {
+                client,
+                minecraft_api_type: MinecraftApiType::Ashcon,
+            },
             key: Key::new(key),
-            minecraft_api_type: MinecraftApiType::Ashcon,
         };
 
         rs_pixel.simple_get("key").await.map(|_| rs_pixel)
     }
 
-    pub fn set_minecraft_api_type(&mut self, minecraft_api_type: MinecraftApiType) {
-        self.minecraft_api_type = minecraft_api_type;
+    pub async fn from_config(key: &str, config: Config) -> Result<RsPixel, RsPixelError> {
+        let mut rs_pixel = RsPixel {
+            config,
+            key: Key::new(key),
+        };
+
+        rs_pixel.simple_get("key").await.map(|_| rs_pixel)
     }
 
     pub async fn username_to_uuid(
@@ -115,6 +172,7 @@ impl RsPixel {
         }
 
         match self
+            .config
             .client
             .get(format!("https://api.hypixel.net/{}", path))
             .query(&params)
@@ -293,5 +351,66 @@ impl RsPixel {
             .and_then(|response| {
                 serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
             })
+    }
+
+    pub async fn get_skyblock_bingo(
+        &mut self,
+        uuid: &str,
+    ) -> Result<SkyblockBingoResponse, RsPixelError> {
+        self.get("skyblock/bingo", json!({ "uuid": uuid }))
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_skyblock_news(&mut self) -> Result<SkyblockNewsResponse, RsPixelError> {
+        self.simple_get("skyblock/news").await.and_then(|response| {
+            serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+        })
+    }
+
+    pub async fn get_skyblock_auctions(
+        &mut self,
+        page: i64,
+    ) -> Result<SkyblockAuctionsResponse, RsPixelError> {
+        self.get("skyblock/auctions", json!({ "page": page }))
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_skyblock_ended_auctions(
+        &mut self,
+    ) -> Result<SkyblockEndedAuctionsResponse, RsPixelError> {
+        self.simple_get("skyblock/auctions_ended")
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_skyblock_bazaar(&mut self) -> Result<SkyblockBazaarResponse, RsPixelError> {
+        self.simple_get("skyblock/bazaar")
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_skyblock_fire_sales(
+        &mut self,
+    ) -> Result<SkyblockFireSalesResponse, RsPixelError> {
+        self.simple_get("skyblock/firesales")
+            .await
+            .and_then(|response| {
+                serde_json::from_value(response).map_err(|err| RsPixelError::from(err))
+            })
+    }
+
+    pub async fn get_resource(&mut self, resource: &str) -> Result<Value, RsPixelError> {
+        self.simple_get(format!("resources/{}", resource).as_str())
+            .await
     }
 }

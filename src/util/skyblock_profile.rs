@@ -1,7 +1,4 @@
-use crate::util::constants::{
-    BLAZE_EXP, CATACOMBS_EXP, ENDERMAN_EXP, HOTM_EXP, LEVELING_CAPS, LEVELING_EXP, PET_EXP,
-    PET_RARITY_OFFSET, RUNECRAFTING_EXP, SOCIAL_EXP, SPIDER_EXP, WOLF_EXP, ZOMBIE_EXP,
-};
+use crate::util::constants::*;
 use crate::{
     types::gamemode::Gamemode,
     util::generic_json::{Property, Raw},
@@ -9,7 +6,9 @@ use crate::{
 use lazy_static::__Deref;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Map, Value};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
+use super::utils::parse_nbt;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SkyblockProfile {
@@ -287,17 +286,9 @@ impl SkyblockProfile {
         }
     }
 
-    fn parse_inventory_nbt(&self, data: &str) -> Option<Value> {
-        base64::decode(data).ok().and_then(|bytes| {
-            nbt::from_gzip_reader::<_, nbt::Blob>(std::io::Cursor::new(bytes))
-                .ok()
-                .and_then(|nbt| nbt.get("i").and_then(|v| serde_json::to_value(v).ok()))
-        })
-    }
-
     pub fn get_inventory(&self) -> Option<Value> {
         if let Some(data) = self.get_player_str_property("inv_contents.data") {
-            self.parse_inventory_nbt(data)
+            parse_nbt(data)
         } else {
             None
         }
@@ -305,7 +296,7 @@ impl SkyblockProfile {
 
     pub fn get_personal_vault(&self) -> Option<Value> {
         if let Some(data) = self.get_player_str_property("personal_vault_contents.data") {
-            self.parse_inventory_nbt(data)
+            parse_nbt(data)
         } else {
             None
         }
@@ -313,7 +304,7 @@ impl SkyblockProfile {
 
     pub fn get_talisman_bag(&self) -> Option<Value> {
         if let Some(data) = self.get_player_str_property("talisman_bag.data") {
-            self.parse_inventory_nbt(data)
+            parse_nbt(data)
         } else {
             None
         }
@@ -321,7 +312,7 @@ impl SkyblockProfile {
 
     pub fn get_equippment(&self) -> Option<Value> {
         if let Some(data) = self.get_player_str_property("equippment_contents.data") {
-            self.parse_inventory_nbt(data)
+            parse_nbt(data)
         } else {
             None
         }
@@ -329,7 +320,7 @@ impl SkyblockProfile {
 
     pub fn get_armor(&self) -> Option<Value> {
         if let Some(data) = self.get_player_str_property("inv_armor.data") {
-            self.parse_inventory_nbt(data)
+            parse_nbt(data)
         } else {
             None
         }
@@ -337,7 +328,7 @@ impl SkyblockProfile {
 
     pub fn get_wardrobe(&self) -> Option<Value> {
         if let Some(data) = self.get_player_str_property("wardrobe_contents.data") {
-            self.parse_inventory_nbt(data)
+            parse_nbt(data)
         } else {
             None
         }
@@ -345,7 +336,7 @@ impl SkyblockProfile {
 
     pub fn get_ender_chest(&self) -> Option<Value> {
         if let Some(data) = self.get_player_str_property("ender_chest_contents.data") {
-            self.parse_inventory_nbt(data)
+            parse_nbt(data)
         } else {
             None
         }
@@ -355,8 +346,8 @@ impl SkyblockProfile {
         if let Some(data) = self.get_player_object_property("backpack_contents") {
             let mut storage = HashMap::new();
             for ele in data {
-                if let Some(bp) = self
-                    .parse_inventory_nbt(ele.1.get("data").and_then(|data| data.as_str()).unwrap())
+                if let Some(bp) =
+                    parse_nbt(ele.1.get("data").and_then(|data| data.as_str()).unwrap())
                 {
                     storage.insert(ele.0.deref(), bp);
                 }
@@ -390,7 +381,7 @@ impl SkyblockProfile {
                         pet.get_int_property("exp").unwrap(),
                         rarity.as_str(),
                     ),
-                    rarity: rarity,
+                    rarity,
                     skin: pet.get_string_property("skin"),
                     held_item: pet.get_string_property("heldItem"),
                 });
@@ -466,6 +457,61 @@ impl SkyblockProfile {
             exp_for_next,
             progress_to_next: progress,
         }
+    }
+
+    pub fn get_fairy_souls(&self) -> i64 {
+        self.get_player_int_property("fairy_souls_collected")
+            .unwrap_or(0)
+    }
+
+    pub fn get_minion_slots(&self) -> i64 {
+        let mut unique_minions = HashSet::new();
+
+        for member in self.members.as_object().unwrap().values() {
+            if let Some(minions_unwrap) = member.get_array_property("crafted_generators") {
+                for ele in minions_unwrap {
+                    unique_minions.insert(ele.as_str().unwrap());
+                }
+            }
+        }
+
+        let mut max = 0;
+        for i in max..CRAFTED_MINIONS_TO_SLOTS.len() {
+            if &(unique_minions.len() as i64) >= CRAFTED_MINIONS_TO_SLOTS.get(i).unwrap() {
+                max = i;
+            } else {
+                break;
+            }
+        }
+
+        (max as i64) + 5
+    }
+
+    pub fn get_pet_score(&self) -> i64 {
+        let mut pets_map = HashMap::new();
+
+        if let Some(pets) = self.get_pets() {
+            for ele in pets {
+                let rarity = match ele.rarity.to_lowercase().as_str() {
+                    "common" => 1,
+                    "uncommon" => 2,
+                    "rare" => 3,
+                    "epic" => 4,
+                    "legendary" => 5,
+                    _ => 0,
+                };
+
+                if let Some(cur_rarity) = pets_map.get(&ele.name) {
+                    if cur_rarity < &rarity {
+                        pets_map.insert(ele.name.clone(), rarity);
+                    }
+                } else {
+                    pets_map.insert(ele.name.clone(), rarity);
+                }
+            }
+        }
+
+        pets_map.values().sum()
     }
 }
 

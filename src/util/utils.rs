@@ -1,3 +1,5 @@
+use serde_json::Value;
+
 const BASE: f64 = 10000.0;
 const GROWTH: f64 = 2500.0;
 const HALF_GROWTH: f64 = 0.5 * GROWTH;
@@ -35,4 +37,12 @@ pub fn get_total_exp_to_level(level: f64) -> f64 {
     } else {
         (get_total_exp_to_full_level(lvl + 1.0) - x0) * (level % 1.0) + x0
     }
+}
+
+pub fn parse_nbt(data: &str) -> Option<Value> {
+    base64::decode(data).ok().and_then(|bytes| {
+        nbt::from_gzip_reader::<_, nbt::Blob>(std::io::Cursor::new(bytes))
+            .ok()
+            .and_then(|nbt| nbt.get("i").and_then(|v| serde_json::to_value(v).ok()))
+    })
 }

@@ -21,8 +21,9 @@ async fn uuid_username(
     is_uuid: bool,
 ) -> Result<MinecraftResponse, RsPixelError> {
     match rs_pixel
+        .config
         .client
-        .get(match rs_pixel.minecraft_api_type {
+        .get(match rs_pixel.config.minecraft_api_type {
             MinecraftApiType::Mojang => {
                 if is_uuid {
                     format!(
@@ -54,7 +55,7 @@ async fn uuid_username(
 
             if res_unwrap.status() == 200 {
                 return match json {
-                    Ok(json_unwrap) => Ok(match rs_pixel.minecraft_api_type {
+                    Ok(json_unwrap) => Ok(match rs_pixel.config.minecraft_api_type {
                         MinecraftApiType::Mojang => MinecraftResponse {
                             username: (if is_uuid {
                                 json_unwrap
@@ -114,7 +115,7 @@ async fn uuid_username(
                 json.ok()
                     .as_ref()
                     .and_then(|json_unwrap| {
-                        json_unwrap.get(match rs_pixel.minecraft_api_type {
+                        json_unwrap.get(match rs_pixel.config.minecraft_api_type {
                             MinecraftApiType::Mojang => "errorMessage",
                             MinecraftApiType::Ashcon => "reason",
                             MinecraftApiType::PlayerDb => "code",
