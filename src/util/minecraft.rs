@@ -1,4 +1,5 @@
-use crate::{error::RsPixelError, RsPixel};
+use super::error::RsPixelError;
+use crate::RsPixel;
 use serde_json::Value;
 
 pub async fn username_to_uuid(

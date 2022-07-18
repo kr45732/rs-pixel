@@ -1,3 +1,4 @@
+use super::utils::parse_nbt;
 use crate::util::constants::*;
 use crate::{
     types::gamemode::Gamemode,
@@ -7,8 +8,6 @@ use lazy_static::__Deref;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Map, Value};
 use std::collections::{HashMap, HashSet};
-
-use super::utils::parse_nbt;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SkyblockProfile {

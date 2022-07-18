@@ -1,9 +1,7 @@
-pub mod error;
 pub mod response;
 pub mod types;
 pub mod util;
 
-use error::RsPixelError;
 use response::{
     boosters_response::BoostersResponse,
     counts_response::CountsResponse,
@@ -27,9 +25,12 @@ use response::{
     status_response::StatusResponse,
 };
 use serde_json::{json, Value};
-use std::time::Duration;
+use std::{cmp::max, time::Duration};
 use surf::Client;
-use util::minecraft::{self, MinecraftApiType, MinecraftResponse};
+use util::{
+    error::RsPixelError,
+    minecraft::{self, MinecraftApiType, MinecraftResponse},
+};
 
 struct Key {
     pub key: String,
@@ -59,13 +60,13 @@ impl Key {
     }
 
     pub fn is_rate_limited(&self) -> bool {
-        return self.remaining_limit < 5
+        return self.remaining_limit <= 1
             && self.time_till_reset > 0
             && self.time + self.time_till_reset * 1000 > chrono::Utc::now().timestamp_millis();
     }
 
     pub fn get_time_till_reset(&self) -> i64 {
-        return std::cmp::max(
+        return max(
             0,
             ((self.time + self.time_till_reset * 1000) - chrono::Utc::now().timestamp_millis())
                 / 1000,
@@ -73,9 +74,16 @@ impl Key {
     }
 }
 
+#[derive(PartialEq)]
+pub enum RateLimitStrategy {
+    Delay,
+    Error,
+}
+
 pub struct Config {
     pub client: Client,
     pub minecraft_api_type: MinecraftApiType,
+    pub rate_limit_strategy: RateLimitStrategy,
 }
 
 impl Config {
@@ -83,6 +91,7 @@ impl Config {
         ConfigBuilder {
             client: None,
             minecraft_api_type: None,
+            rate_limit_strategy: None,
         }
     }
 }
@@ -90,6 +99,7 @@ impl Config {
 pub struct ConfigBuilder {
     client: Option<Client>,
     minecraft_api_type: Option<MinecraftApiType>,
+    rate_limit_strategy: Option<RateLimitStrategy>,
 }
 
 impl ConfigBuilder {
@@ -100,6 +110,11 @@ impl ConfigBuilder {
 
     pub fn minecraft_api_type(mut self, minecraft_api_type: MinecraftApiType) -> ConfigBuilder {
         self.minecraft_api_type = Some(minecraft_api_type);
+        self
+    }
+
+    pub fn rate_limit_strategy(mut self, rate_limit_strategy: RateLimitStrategy) -> ConfigBuilder {
+        self.rate_limit_strategy = Some(rate_limit_strategy);
         self
     }
 }
@@ -114,6 +129,7 @@ impl Into<Config> for ConfigBuilder {
                     .unwrap(),
             ),
             minecraft_api_type: self.minecraft_api_type.unwrap_or(MinecraftApiType::Ashcon),
+            rate_limit_strategy: self.rate_limit_strategy.unwrap_or(RateLimitStrategy::Delay),
         }
     }
 }
@@ -125,15 +141,8 @@ pub struct RsPixel {
 
 impl RsPixel {
     pub async fn new(key: &str) -> Result<RsPixel, RsPixelError> {
-        let client = surf::Config::new()
-            .set_timeout(Some(Duration::from_secs(15)))
-            .try_into()
-            .unwrap();
         let mut rs_pixel = RsPixel {
-            config: Config {
-                client,
-                minecraft_api_type: MinecraftApiType::Ashcon,
-            },
+            config: Config::new().into(),
             key: Key::new(key),
         };
 
@@ -167,8 +176,15 @@ impl RsPixel {
     pub async fn get(&mut self, path: &str, params: Value) -> Result<Value, RsPixelError> {
         if self.key.is_rate_limited() {
             let time_till_reset = self.key.get_time_till_reset();
-            println!("Sleeping for {} seconds", time_till_reset);
-            std::thread::sleep(Duration::from_secs(time_till_reset.try_into().unwrap()));
+            match self.config.rate_limit_strategy {
+                RateLimitStrategy::Delay => {
+                    println!("Sleeping for {} seconds", time_till_reset);
+                    std::thread::sleep(Duration::from_secs(time_till_reset.try_into().unwrap()));
+                }
+                RateLimitStrategy::Error => {
+                    return Err(RsPixelError::RateLimit(self.key.time_till_reset));
+                }
+            }
         }
 
         match self

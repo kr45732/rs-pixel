@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 
 lazy_static! {
     // Leveling data from [NotEnoughUpdates-REPO](https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO/)
