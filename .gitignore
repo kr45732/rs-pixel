@@ -3,4 +3,5 @@
 /.vscode
 
 # Testing purposes
+main.txt
 main.rs
