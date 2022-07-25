@@ -1,18 +1,107 @@
-name: Rust
+name: CI
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request, workflow_dispatch]
 
 env:
+  # Use `haswell` instead of `native` due to some GitHub Actions runners not
+  # supporting some `avx512` instructions.
+  RUSTFLAGS: -C target-cpu=haswell -D warnings
   CARGO_TERM_COLOR: always
+  minrust: "1.62.1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  MSRV:
+    name: Minimum supported Rust version
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
+      - name: Setup | Checkout Sources
+        uses: actions/checkout@v3
+
+      - name: Setup | toolchain ($minrust)
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: $minrust
+
+      - name: Setup | Cache
+        uses: Swatinem/rust-cache@v1
+
+      - run: cargo check --all-features --all-targets
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout Sources
+        uses: actions/checkout@v3
+
+      - name: Setup | toolchain ($minrust)
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: $minrust
+          components: rustfmt
+
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy
+    needs: ["MSRV"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout Sources
+        uses: actions/checkout@v3
+
+      - name: Setup | toolchain ($minrust)
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: $minrust
+          components: clippy
+
+      - name: Setup | Cache
+        uses: Swatinem/rust-cache@v1
+
+      - name: Run clippy
+        run: cargo clippy --all-features --all-targets
+
+  test:
+    name: test
+    needs: ["MSRV"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout Sources
+        uses: actions/checkout@v3
+
+      - name: Setup | toolchain ($minrust)
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: $minrust
+
+      - name: Setup | Cache
+        uses: Swatinem/rust-cache@v1
+
+      - name: Run Tests
+        run: cargo test
+
+  build:
+    name: build
+    needs: ["MSRV"]
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Setup | Checkout Sources
+        uses: actions/checkout@v3
+
+      - name: Setup | toolchain ($minrust)
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: $minrust
+
+      - name: Setup | Cache
+        uses: Swatinem/rust-cache@v1
+
+      - name: Build
+        run: cargo build --release
