@@ -34,6 +34,13 @@ impl<'de> Deserialize<'de> for GameType {
             {
                 Ok(GameType::from(value))
             }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(GameType::from(value.to_string()))
+            }
         }
 
         deserializer.deserialize_any(GameTypeVisitor)

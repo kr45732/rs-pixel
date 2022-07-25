@@ -23,12 +23,12 @@ where
             return Some(self.raw());
         }
 
-        let mut paths = full_path.split(".");
+        let paths = full_path.split('.');
         let mut cur_raw = self.raw();
 
-        while let Some(path) = paths.next() {
+        for path in paths {
             if cur_raw.is_array() {
-                if let Some(idx) = path.parse::<usize>().ok() {
+                if let Ok(idx) = path.parse::<usize>() {
                     match cur_raw.get(idx) {
                         Some(new_raw) => cur_raw = new_raw,
                         None => return None,
@@ -47,39 +47,44 @@ where
     }
 
     fn get_str_property(&self, full_path: &str) -> Option<&str> {
-        self.get_property(full_path).and_then(|v| v.as_str())
+        self.get_property(full_path)
+            .and_then(serde_json::Value::as_str)
     }
 
     fn get_string_property(&self, full_path: &str) -> Option<String> {
         self.get_property(full_path)
-            .and_then(|v| v.as_str())
-            .map(|v| v.to_string())
+            .and_then(serde_json::Value::as_str)
+            .map(std::string::ToString::to_string)
     }
 
     fn get_int_property(&self, full_path: &str) -> Option<i64> {
         self.get_property(full_path)
-            .and_then(|v| v.as_i64())
-            .or(self
-                .get_property(full_path)
-                .and_then(|v| v.as_f64())
-                .map(|v| v as i64))
+            .and_then(serde_json::Value::as_i64)
+            .or_else(|| {
+                self.get_property(full_path)
+                    .and_then(serde_json::Value::as_f64)
+                    .map(|v| v as i64)
+            })
     }
 
     fn get_float_property(&self, full_path: &str) -> Option<f64> {
         self.get_property(full_path)
-            .and_then(|v| v.as_f64())
-            .or(self
-                .get_property(full_path)
-                .and_then(|v| v.as_i64())
-                .map(|v| v as f64))
+            .and_then(serde_json::Value::as_f64)
+            .or_else(|| {
+                self.get_property(full_path)
+                    .and_then(serde_json::Value::as_i64)
+                    .map(|v| v as f64)
+            })
     }
 
     fn get_array_property(&self, full_path: &str) -> Option<&Vec<Value>> {
-        self.get_property(full_path).and_then(|v| v.as_array())
+        self.get_property(full_path)
+            .and_then(serde_json::Value::as_array)
     }
 
     fn get_object_property(&self, full_path: &str) -> Option<&Map<String, Value>> {
-        self.get_property(full_path).and_then(|v| v.as_object())
+        self.get_property(full_path)
+            .and_then(serde_json::Value::as_object)
     }
 }
 

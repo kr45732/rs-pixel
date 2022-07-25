@@ -48,11 +48,26 @@ impl<'de> Deserialize<'de> for ServerType {
             where
                 E: de::Error,
             {
-                if let Some(game_type) = GameType::try_from(value.to_owned()).ok() {
+                if let Ok(game_type) = GameType::try_from(value.clone()) {
                     return Ok(ServerType::GameType(game_type));
                 }
 
-                if let Some(lobby_type) = LobbyType::try_from(value).ok() {
+                if let Ok(lobby_type) = LobbyType::try_from(value) {
+                    return Ok(ServerType::LobbyType(lobby_type));
+                }
+
+                Ok(ServerType::Unknown)
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                if let Ok(game_type) = GameType::try_from(value.to_string()) {
+                    return Ok(ServerType::GameType(game_type));
+                }
+
+                if let Ok(lobby_type) = LobbyType::try_from(value.to_string()) {
                     return Ok(ServerType::LobbyType(lobby_type));
                 }
 

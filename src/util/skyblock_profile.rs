@@ -1,10 +1,14 @@
 use super::utils::parse_nbt;
-use crate::util::constants::*;
+use crate::util::constants::{
+    BLAZE_EXP, CATACOMBS_EXP, CRAFTED_MINIONS_TO_SLOTS, ENDERMAN_EXP, HOTM_EXP, LEVELING_CAPS,
+    LEVELING_EXP, PET_EXP, PET_RARITY_OFFSET, RUNECRAFTING_EXP, SOCIAL_EXP, SPIDER_EXP, WOLF_EXP,
+    ZOMBIE_EXP,
+};
 use crate::{
     types::gamemode::Gamemode,
     util::generic_json::{Property, Raw},
 };
-use lazy_static::__Deref;
+
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Map, Value};
 use std::collections::{HashMap, HashSet};
@@ -60,35 +64,38 @@ impl SkyblockProfile {
     }
 
     pub fn get_player_str_property(&self, full_path: &str) -> Option<&str> {
-        self.get_player_property(full_path).and_then(|v| v.as_str())
+        self.get_player_property(full_path)
+            .and_then(serde_json::Value::as_str)
     }
 
     pub fn get_player_int_property(&self, full_path: &str) -> Option<i64> {
         self.get_player_property(full_path)
-            .and_then(|v| v.as_i64())
-            .or(self
-                .get_player_property(full_path)
-                .and_then(|v| v.as_f64())
-                .map(|v| v as i64))
+            .and_then(serde_json::Value::as_i64)
+            .or_else(|| {
+                self.get_player_property(full_path)
+                    .and_then(serde_json::Value::as_f64)
+                    .map(|v| v as i64)
+            })
     }
 
     pub fn get_player_float_property(&self, full_path: &str) -> Option<f64> {
         self.get_player_property(full_path)
-            .and_then(|v| v.as_f64())
-            .or(self
-                .get_player_property(full_path)
-                .and_then(|v| v.as_i64())
-                .map(|v| v as f64))
+            .and_then(serde_json::Value::as_f64)
+            .or_else(|| {
+                self.get_player_property(full_path)
+                    .and_then(serde_json::Value::as_i64)
+                    .map(|v| v as f64)
+            })
     }
 
     pub fn get_player_array_property(&self, full_path: &str) -> Option<&Vec<Value>> {
         self.get_player_property(full_path)
-            .and_then(|v| v.as_array())
+            .and_then(serde_json::Value::as_array)
     }
 
     pub fn get_player_object_property(&self, full_path: &str) -> Option<&Map<String, Value>> {
         self.get_player_property(full_path)
-            .and_then(|v| v.as_object())
+            .and_then(serde_json::Value::as_object)
     }
 
     pub fn get_purse_coins(&self) -> Option<f64> {
@@ -96,7 +103,7 @@ impl SkyblockProfile {
     }
 
     pub fn get_skill(&self, skill_name: &str) -> Option<LevelingStruct> {
-        if let Some(skill_exp) = self.get_player_int_property(
+        self.get_player_int_property(
             format!(
                 "experience_skill_{}",
                 if skill_name == "social" {
@@ -106,11 +113,8 @@ impl SkyblockProfile {
                 }
             )
             .as_str(),
-        ) {
-            Some(self.skill_exp_to_info(skill_name, skill_exp))
-        } else {
-            None
-        }
+        )
+        .map(|skill_exp| self.skill_exp_to_info(skill_name, skill_exp))
     }
 
     pub fn skill_exp_to_info(&self, skill_name: &str, skill_exp: i64) -> LevelingStruct {
@@ -144,9 +148,9 @@ impl SkyblockProfile {
             if exp_total > skill_exp {
                 exp_total -= cur_exp_needed;
                 break;
-            } else {
-                level = i + 1;
             }
+
+            level = i + 1;
         }
 
         let exp_current = skill_exp - exp_total;
@@ -188,11 +192,8 @@ impl SkyblockProfile {
     }
 
     pub fn get_hotm(&self) -> Option<LevelingStruct> {
-        if let Some(exp) = self.get_player_int_property("mining_core.experience") {
-            Some(self.skill_exp_to_info("hotm", exp))
-        } else {
-            None
-        }
+        self.get_player_int_property("mining_core.experience")
+            .map(|exp| self.skill_exp_to_info("hotm", exp))
     }
 
     pub fn slayer_exp_to_info(&self, slayer_name: &str, slayer_exp: i64) -> LevelingStruct {
@@ -221,9 +222,9 @@ impl SkyblockProfile {
         for i in 0..max_level {
             if leveling_table[i as usize] > slayer_exp {
                 break;
-            } else {
-                level = i + 1;
             }
+
+            level = i + 1;
         }
 
         let exp_prev = if level > 0 {
@@ -256,33 +257,20 @@ impl SkyblockProfile {
     }
 
     pub fn get_slayer(&self, slayer_name: &str) -> Option<LevelingStruct> {
-        if let Some(exp) =
-            self.get_player_int_property(format!("slayer_bosses.{}.xp", slayer_name).as_str())
-        {
-            Some(self.slayer_exp_to_info(slayer_name, exp))
-        } else {
-            None
-        }
+        self.get_player_int_property(format!("slayer_bosses.{}.xp", slayer_name).as_str())
+            .map(|exp| self.slayer_exp_to_info(slayer_name, exp))
     }
 
     pub fn get_catacombs(&self) -> Option<LevelingStruct> {
-        if let Some(exp) =
-            self.get_player_int_property("dungeons.dungeon_types.catacombs.experience")
-        {
-            Some(self.skill_exp_to_info("catacombs", exp))
-        } else {
-            None
-        }
+        self.get_player_int_property("dungeons.dungeon_types.catacombs.experience")
+            .map(|exp| self.skill_exp_to_info("catacombs", exp))
     }
 
     pub fn get_dungeon_class(&self, class_name: &str) -> Option<LevelingStruct> {
-        if let Some(exp) = self.get_player_int_property(
+        self.get_player_int_property(
             format!("dungeons.player_classes.{}.experience", class_name).as_str(),
-        ) {
-            Some(self.skill_exp_to_info("catacombs", exp))
-        } else {
-            None
-        }
+        )
+        .map(|exp| self.skill_exp_to_info("catacombs", exp))
     }
 
     pub fn get_inventory(&self) -> Option<Value> {
@@ -345,10 +333,13 @@ impl SkyblockProfile {
         if let Some(data) = self.get_player_object_property("backpack_contents") {
             let mut storage = HashMap::new();
             for ele in data {
-                if let Some(bp) =
-                    parse_nbt(ele.1.get("data").and_then(|data| data.as_str()).unwrap())
-                {
-                    storage.insert(ele.0.deref(), bp);
+                if let Some(bp) = parse_nbt(
+                    ele.1
+                        .get("data")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap(),
+                ) {
+                    storage.insert(&**ele.0, bp);
                 }
             }
             Some(storage)
@@ -361,7 +352,7 @@ impl SkyblockProfile {
         if let Some(data) = self.get_object_property("sacks_counts") {
             let mut sacks = HashMap::new();
             for ele in data {
-                sacks.insert(ele.0.deref(), ele.1.as_i64().unwrap_or(0));
+                sacks.insert(&**ele.0, ele.1.as_i64().unwrap_or(0));
             }
             Some(sacks)
         } else {
@@ -375,7 +366,7 @@ impl SkyblockProfile {
             for pet in pets {
                 let rarity = pet.get_string_property("tier").unwrap();
                 parsed_pets.push(PetStruct {
-                    leveling: self.pet_exp_to_info(
+                    leveling: Self::pet_exp_to_info(
                         pet.get_str_property("type").unwrap(),
                         pet.get_int_property("exp").unwrap(),
                         rarity.as_str(),
@@ -391,12 +382,7 @@ impl SkyblockProfile {
         }
     }
 
-    pub fn pet_exp_to_info(
-        &self,
-        pet_name: &str,
-        pet_exp: i64,
-        pet_rarity: &str,
-    ) -> LevelingStruct {
+    pub fn pet_exp_to_info(pet_name: &str, pet_exp: i64, pet_rarity: &str) -> LevelingStruct {
         let leveling_table = *PET_EXP;
         let max_level = 100; // TODO: golden dragon
 
@@ -425,13 +411,13 @@ impl SkyblockProfile {
                 exp_total -= cur_exp_needed;
                 is_maxed = false;
                 break;
-            } else {
-                level += 1;
             }
+
+            level += 1;
         }
 
         if is_maxed {
-            level = 100
+            level = 100;
         }
 
         let exp_current = pet_exp - exp_total;
@@ -476,11 +462,11 @@ impl SkyblockProfile {
 
         let mut max = 0;
         for i in max..CRAFTED_MINIONS_TO_SLOTS.len() {
-            if &(unique_minions.len() as i64) >= CRAFTED_MINIONS_TO_SLOTS.get(i).unwrap() {
-                max = i;
-            } else {
+            if &(unique_minions.len() as i64) < CRAFTED_MINIONS_TO_SLOTS.get(i).unwrap() {
                 break;
             }
+
+            max = i;
         }
 
         (max as i64) + 5

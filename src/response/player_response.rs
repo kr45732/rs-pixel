@@ -29,15 +29,13 @@ impl PlayerResponse {
                 match self
                     .get_array_property("knownAliases")
                     .and_then(|aliases| aliases.last())
-                    .and_then(|alias| alias.as_str())
+                    .and_then(serde_json::Value::as_str)
                 {
-                    Some(alias) => {
-                        return Some(alias);
-                    }
+                    Some(alias) => Some(alias),
                     None => {
                         return self
                             .get_str_property("playername")
-                            .or(self.get_str_property("username"))
+                            .or_else(|| self.get_str_property("username"))
                     }
                 }
             }
@@ -72,7 +70,7 @@ impl PlayerResponse {
             return self.get_str_property("packageRank").unwrap_or("NONE");
         }
 
-        return "NONE";
+        "NONE"
     }
 
     pub fn has_rank(&self) -> bool {
