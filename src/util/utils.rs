@@ -1,4 +1,5 @@
 use serde_json::Value;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 const BASE: f64 = 10000.0;
 const GROWTH: f64 = 2500.0;
@@ -45,4 +46,11 @@ pub fn parse_nbt(data: &str) -> Option<Value> {
             .ok()
             .and_then(|nbt| nbt.get("i").and_then(|v| serde_json::to_value(v).ok()))
     })
+}
+
+pub fn get_timestamp_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64
 }
