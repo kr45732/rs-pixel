@@ -30,6 +30,7 @@ use serde_json::{json, Value};
 use std::{cmp::max, time::Duration};
 use surf::Client;
 use util::{
+    utils::get_timestamp_millis,
     error::Error,
     minecraft::{self, ApiType, Response},
 };
@@ -53,25 +54,24 @@ impl Key {
 
     pub fn update_remaining_limit(&mut self, remaining_limit: i64) {
         self.remaining_limit = remaining_limit;
-        self.time = chrono::Utc::now().timestamp_millis();
+        self.time = get_timestamp_millis();
     }
 
     pub fn update_time_till_reset(&mut self, time_till_reset: i64) {
         self.time_till_reset = time_till_reset;
-        self.time = chrono::Utc::now().timestamp_millis();
+        self.time = get_timestamp_millis();
     }
 
     pub fn is_rate_limited(&self) -> bool {
         self.remaining_limit <= 1
             && self.time_till_reset > 0
-            && self.time + self.time_till_reset * 1000 > chrono::Utc::now().timestamp_millis()
+            && self.time + self.time_till_reset * 1000 > get_timestamp_millis()
     }
 
     pub fn get_time_till_reset(&self) -> i64 {
         max(
             0,
-            ((self.time + self.time_till_reset * 1000) - chrono::Utc::now().timestamp_millis())
-                / 1000,
+            ((self.time + self.time_till_reset * 1000) - get_timestamp_millis()) / 1000,
         )
     }
 }
