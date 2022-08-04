@@ -1,5 +1,5 @@
 use serde_json::Value;
-use std::time::{UNIX_EPOCH, SystemTime};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 const BASE: f64 = 10000.0;
 const GROWTH: f64 = 2500.0;

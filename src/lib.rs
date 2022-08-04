@@ -30,9 +30,9 @@ use serde_json::{json, Value};
 use std::{cmp::max, time::Duration};
 use surf::Client;
 use util::{
-    utils::get_timestamp_millis,
     error::Error,
     minecraft::{self, ApiType, Response},
+    utils::get_timestamp_millis,
 };
 
 struct Key {
