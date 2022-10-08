@@ -5,7 +5,7 @@ use std::collections::HashMap;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GuildResponse {
     pub success: bool,
-    pub guild: Guild,
+    pub guild: Option<Guild>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

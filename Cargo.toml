@@ -1,6 +1,6 @@
 [package]
 name = "rs-pixel"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "A complete, rate-limiting, asynchronous Rust implementation of the Hypixel Public API with extensive SkyBlock support"
 repository = "https://github.com/kr45732/rs-pixel"
