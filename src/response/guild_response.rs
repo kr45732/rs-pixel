@@ -14,7 +14,7 @@ pub struct Guild {
     pub id: String,
     pub created: i64,
     pub exp: i64,
-    #[serde(rename = "publiclyListed")]
+    #[serde(rename = "publiclyListed", default = "Default::default")]
     pub publicly_listed: bool,
     #[serde(default = "Default::default")]
     pub joinable: bool,
