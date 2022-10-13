@@ -10,6 +10,8 @@ pub enum Error {
     Unknown(String),
 }
 
+impl std::error::Error for Error {}
+
 impl From<surf::Error> for Error {
     fn from(e: surf::Error) -> Self {
         Error::Client(e)
