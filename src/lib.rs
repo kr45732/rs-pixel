@@ -43,9 +43,9 @@ struct Key {
 }
 
 impl Key {
-    pub fn new(key: &str) -> Key {
+    pub fn new(key: impl Into<String>) -> Key {
         Key {
-            key: key.to_string(),
+            key: key.into(),
             remaining_limit: 0,
             time_till_reset: 0,
             time: 0,
@@ -133,7 +133,7 @@ pub struct RsPixel {
 }
 
 impl RsPixel {
-    pub async fn new(key: &str) -> Result<RsPixel, Error> {
+    pub async fn new(key: impl Into<String>) -> Result<RsPixel, Error> {
         let mut rs_pixel = RsPixel {
             config: ConfigBuilder::default().into(),
             key: Key::new(key),
@@ -142,7 +142,7 @@ impl RsPixel {
         rs_pixel.simple_get("key").await.map(|_| rs_pixel)
     }
 
-    pub async fn from_config(key: &str, config: Config) -> Result<RsPixel, Error> {
+    pub async fn from_config(key: impl Into<String>, config: Config) -> Result<RsPixel, Error> {
         let mut rs_pixel = RsPixel {
             config,
             key: Key::new(key),
@@ -183,7 +183,7 @@ impl RsPixel {
             .get(format!("https://api.hypixel.net/{}", path))
             .query(&params)
             .unwrap()
-            .header("API-Key", self.key.key.to_string())
+            .header("API-Key", self.key.key.clone())
             .send()
             .await
         {
