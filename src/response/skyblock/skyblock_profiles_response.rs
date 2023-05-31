@@ -16,16 +16,14 @@ impl SkyblockProfilesResponse {
         }
     }
 
-    pub fn get_last_played_profile(&self) -> Option<&SkyblockProfile> {
-        let last_save = 0;
-        let mut last_played_profile = None;
+    pub fn get_selected_profile(&self) -> Option<&SkyblockProfile> {
         for profile in &self.profiles {
-            if profile.last_save > last_save {
-                last_played_profile = Some(profile);
+            if profile.selected {
+                return Some(profile);
             }
         }
 
-        last_played_profile
+        None
     }
 
     pub fn get_profile_by_name(&self, profile_name: &str) -> Option<&SkyblockProfile> {

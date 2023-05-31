@@ -19,7 +19,7 @@ pub struct SkyblockProfile {
     pub members: Value,
     pub community_upgrades: Option<SkyblockCommunityUpgrades>,
     #[serde(default = "Default::default")]
-    pub last_save: i64,
+    pub selected: bool,
     pub cute_name: Option<String>,
     pub banking: Option<SkyblockBanking>,
     #[serde(
@@ -36,7 +36,7 @@ where
     D: Deserializer<'de>,
 {
     let opt: Option<String> = Option::deserialize(deserializer)?;
-    Ok(match opt.unwrap_or("regular".to_string()).as_str() {
+    Ok(match opt.unwrap_or_default().as_str() {
         "ironman" => Gamemode::Ironman,
         "island" => Gamemode::Stranded,
         "bingo" => Gamemode::Bingo,
@@ -117,7 +117,7 @@ impl SkyblockProfile {
         .map(|skill_exp| self.skill_exp_to_info(skill_name, skill_exp))
     }
 
-    pub fn skill_exp_to_info(&self, skill_name: &str, skill_exp: i64) -> LevelingStruct {
+    fn skill_exp_to_info(&self, skill_name: &str, skill_exp: i64) -> LevelingStruct {
         let leveling_table = match skill_name {
             "catacombs" => *CATACOMBS_EXP,
             "runecrafting" => *RUNECRAFTING_EXP,
@@ -196,7 +196,7 @@ impl SkyblockProfile {
             .map(|exp| self.skill_exp_to_info("hotm", exp))
     }
 
-    pub fn slayer_exp_to_info(&self, slayer_name: &str, slayer_exp: i64) -> LevelingStruct {
+    fn slayer_exp_to_info(&self, slayer_name: &str, slayer_exp: i64) -> LevelingStruct {
         let leveling_table = match slayer_name {
             "zombie" => *ZOMBIE_EXP,
             "wolf" => *WOLF_EXP,
@@ -382,7 +382,7 @@ impl SkyblockProfile {
         }
     }
 
-    pub fn pet_exp_to_info(pet_name: &str, pet_exp: i64, pet_rarity: &str) -> LevelingStruct {
+    fn pet_exp_to_info(pet_name: &str, pet_exp: i64, pet_rarity: &str) -> LevelingStruct {
         let leveling_table = *PET_EXP;
         let max_level = 100; // TODO: golden dragon
 

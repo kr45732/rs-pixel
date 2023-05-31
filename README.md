@@ -47,7 +47,7 @@ println!(
 Print a skyblock player's statistics
 ```rust
 let response = api.get_skyblock_profiles_by_name("USERNAME").await.unwrap();
-let profile = response.get_last_played_profile().unwrap();
+let profile = response.get_selected_profile().unwrap();
 
 println!(
     "Enderman Slayer XP: {}\nCombat Skill Level: {}\nCatacombs LeveL: {}",
@@ -60,7 +60,7 @@ println!(
 Print a skyblock player's inventory contents (NBT parsed to JSON)
 ```rust
 let response = api.get_skyblock_profiles_by_uuid("uuid").await.unwrap();
-let profile = response.get_last_played_profile().unwrap();
+let profile = response.get_selected_profile().unwrap();
 
 println!("Inventory Contents:  {}", profile.get_inventory().unwrap());
 ```
