@@ -1,7 +1,7 @@
 # rs-pixel &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![Discord]][discord link]
 
 [actions]: https://github.com/kr45732/rs-pixel/actions?query=branch%3Amain
-[Build Status]: https://img.shields.io/github/workflow/status/kr45732/rs-pixel/Rust/main
+[Build Status]: https://img.shields.io/github/actions/workflow/status/kr45732/rs-pixel/ci.yml?branch=main
 [Latest Version]: https://img.shields.io/crates/v/rs-pixel.svg
 [crates.io]: https://crates.io/crates/rs-pixel
 [Discord]: https://img.shields.io/discord/796790757947867156?color=4166f5&label=discord&style=flat-square
@@ -11,7 +11,7 @@ A complete, rate-limiting, asynchronous Rust implementation of the Hypixel Publi
 
 ```toml
 [dependencies]
-rs-pixel = "0.1.0"
+rs-pixel = "0.2.0"
 ```
 
 # Getting started
@@ -35,7 +35,8 @@ let mut api = RsPixel::from_config("API KEY", config).await.unwrap();
 ## Examples
 Print a player's name and rank
 ```rust
-let response = api.get_player_by_username("USERNAME").await.unwrap();
+let uuid = &api.username_to_uuid("USERNME").await.unwrap().uuid;
+let response = api.get_player(uuid).await.unwrap();
 
 println!(
     "{} has the {} rank",
@@ -46,23 +47,25 @@ println!(
 
 Print a skyblock player's statistics
 ```rust
-let response = api.get_skyblock_profiles_by_name("USERNAME").await.unwrap();
+let uuid = &api.username_to_uuid("USERNME").await.unwrap().uuid;
+let response = api.get_skyblock_profiles(uuid).await.unwrap();
 let profile = response.get_selected_profile().unwrap();
 
 println!(
     "Enderman Slayer XP: {}\nCombat Skill Level: {}\nCatacombs LeveL: {}",
-    profile.get_slayer("enderman").unwrap().current_exp,
-    profile.get_skill("combat").unwrap().level,
-    profile.get_catacombs().unwrap().level
+    profile.get_slayer(uuid, "enderman").unwrap().current_exp,
+    profile.get_skill(uuid, "combat").unwrap().level,
+    profile.get_catacombs(uuid).unwrap().level
 );
 ```
 
 Print a skyblock player's inventory contents (NBT parsed to JSON)
 ```rust
-let response = api.get_skyblock_profiles_by_uuid("uuid").await.unwrap();
+let uuid = "UUID";
+let response = api.get_skyblock_profiles(uuid).await.unwrap();
 let profile = response.get_selected_profile().unwrap();
 
-println!("Inventory Contents:  {}", profile.get_inventory().unwrap());
+println!("Inventory Contents:  {}", profile.get_inventory(uuid).unwrap());
 ```
 
 Get the first page and print the first auction

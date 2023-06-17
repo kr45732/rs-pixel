@@ -1,6 +1,5 @@
 pub mod boosters_response;
 pub mod counts_response;
-pub mod friends_response;
 pub mod guild_response;
 pub mod key_response;
 pub mod leaderboards_response;

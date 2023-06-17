@@ -1,6 +1,6 @@
 [package]
 name = "rs-pixel"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 description = "A complete, rate-limiting, asynchronous Rust implementation of the Hypixel Public API with extensive SkyBlock support"
 repository = "https://github.com/kr45732/rs-pixel"
@@ -14,3 +14,9 @@ serde = { version = "1.0.147", features = ["derive"] }
 lazy_static = "1.4.0"
 hematite-nbt = "0.5.2"
 base64 = "0.13.1"
+moka = { version = "0.11.2", features = ["future"]}
+
+[profile.release]
+codegen-units = 1
+debug = true
+lto = true

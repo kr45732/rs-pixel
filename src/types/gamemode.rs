@@ -1,15 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub enum Gamemode {
+    #[default]
     Regular,
     Ironman,
     Stranded,
     Bingo,
-}
-
-impl Default for Gamemode {
-    fn default() -> Self {
-        Gamemode::Regular
-    }
 }

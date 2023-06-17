@@ -2,7 +2,6 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 
 lazy_static! {
-    // Leveling data from [NotEnoughUpdates-REPO](https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO/)
     pub static ref LEVELING_EXP: &'static [i64] = &[
         50, 125, 200, 300, 500, 750, 1000, 1500, 2000, 3500, 5000, 7500, 10000, 15000, 20000,
         30000, 50000, 75000, 100_000, 200_000, 300_000, 400_000, 500_000, 600_000, 700_000, 800_000,
