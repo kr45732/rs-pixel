@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose, Engine};
 use serde_json::Value;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -41,11 +42,14 @@ pub fn get_total_exp_to_level(level: f64) -> f64 {
 }
 
 pub fn parse_nbt(data: &str) -> Option<Value> {
-    base64::decode(data).ok().and_then(|bytes| {
-        nbt::from_gzip_reader::<_, nbt::Blob>(std::io::Cursor::new(bytes))
-            .ok()
-            .and_then(|nbt| nbt.get("i").and_then(|v| serde_json::to_value(v).ok()))
-    })
+    general_purpose::STANDARD
+        .decode(data)
+        .ok()
+        .and_then(|bytes| {
+            nbt::from_gzip_reader::<_, nbt::Blob>(std::io::Cursor::new(bytes))
+                .ok()
+                .and_then(|nbt| nbt.get("i").and_then(|v| serde_json::to_value(v).ok()))
+        })
 }
 
 pub fn get_timestamp_millis() -> i64 {
