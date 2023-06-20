@@ -28,7 +28,7 @@ use response::{
     status_response::StatusResponse,
 };
 use serde::de::DeserializeOwned;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::{
     any::Any,
     cmp::max,
@@ -70,11 +70,29 @@ impl RsPixel {
         minecraft::uuid_to_username(self, uuid).await
     }
 
-    async fn get<T>(&mut self, endpoint: HypixelEndpoint, params: Value) -> Result<Arc<T>, Error>
+    fn get_params(&self, key: &str, value: &str) -> HashMap<String, String> {
+        let mut params = HashMap::new();
+        params.insert(key.to_string(), value.to_string());
+        params
+    }
+
+    pub fn is_cached(&mut self, path: &str, params: HashMap<String, String>) -> bool {
+        if let Some(cache) = &self.config.cache {
+            cache.contains_key(&format!("{}-{:?}", path, params))
+        } else {
+            false
+        }
+    }
+
+    async fn get<T>(
+        &mut self,
+        endpoint: HypixelEndpoint,
+        params: HashMap<String, String>,
+    ) -> Result<Arc<T>, Error>
     where
         for<'a> T: DeserializeOwned + Send + Sync + 'a,
     {
-        let cache_key = format!("{}-{}", endpoint.0, params);
+        let cache_key = format!("{}-{:?}", endpoint.0, params);
 
         if let Some(cache) = &self.config.cache {
             if let Some(cached) = cache.get(&cache_key) {
@@ -158,7 +176,7 @@ impl RsPixel {
     where
         for<'a> T: DeserializeOwned + Send + Sync + 'a,
     {
-        self.get(path, json!({})).await
+        self.get(path, HashMap::new()).await
     }
 
     pub async fn get_key(&mut self) -> Result<Arc<KeyResponse>, Error> {
@@ -178,33 +196,21 @@ impl RsPixel {
     }
 
     pub async fn get_player(&mut self, uuid: &str) -> Result<Arc<PlayerResponse>, Error> {
-        self.get(HypixelEndpoint::PLAYER, json!({ "uuid": uuid }))
+        self.get(HypixelEndpoint::PLAYER, self.get_params("uuid", uuid))
             .await
     }
-
-    async fn get_guild(&mut self, key: &str, value: &str) -> Result<Arc<GuildResponse>, Error> {
-        self.get(HypixelEndpoint::GUILD, json!({ key: value }))
+    pub async fn get_guild_by_player(&mut self, player: &str) -> Result<Arc<GuildResponse>, Error> {
+        self.get(HypixelEndpoint::GUILD, self.get_params("player", player))
             .await
-    }
-
-    pub async fn get_guild_by_player(&mut self, uuid: &str) -> Result<Arc<GuildResponse>, Error> {
-        self.get_guild("player", uuid).await
     }
 
     pub async fn get_guild_by_name(&mut self, name: &str) -> Result<Arc<GuildResponse>, Error> {
-        self.get_guild("name", name).await
+        self.get(HypixelEndpoint::GUILD, self.get_params("name", name))
+            .await
     }
 
     pub async fn get_guild_by_id(&mut self, id: &str) -> Result<Arc<GuildResponse>, Error> {
-        self.get_guild("id", id).await
-    }
-
-    async fn get_skyblock_auction(
-        &mut self,
-        key: &str,
-        value: &str,
-    ) -> Result<Arc<SkyblockAuctionResponse>, Error> {
-        self.get(HypixelEndpoint::SKYBLOCK_AUCTION, json!({ key: value }))
+        self.get(HypixelEndpoint::GUILD, self.get_params("id", id))
             .await
     }
 
@@ -212,21 +218,33 @@ impl RsPixel {
         &mut self,
         uuid: &str,
     ) -> Result<Arc<SkyblockAuctionResponse>, Error> {
-        self.get_skyblock_auction("uuid", uuid).await
+        self.get(
+            HypixelEndpoint::SKYBLOCK_AUCTION,
+            self.get_params("uuid", uuid),
+        )
+        .await
     }
 
     pub async fn get_skyblock_auction_by_player(
         &mut self,
         player: &str,
     ) -> Result<Arc<SkyblockAuctionResponse>, Error> {
-        self.get_skyblock_auction("player", player).await
+        self.get(
+            HypixelEndpoint::SKYBLOCK_AUCTION,
+            self.get_params("player", player),
+        )
+        .await
     }
 
     pub async fn get_skyblock_auction_by_profile(
         &mut self,
         profile: &str,
     ) -> Result<Arc<SkyblockAuctionResponse>, Error> {
-        self.get_skyblock_auction("profile", profile).await
+        self.get(
+            HypixelEndpoint::SKYBLOCK_AUCTION,
+            self.get_params("profile", profile),
+        )
+        .await
     }
 
     pub async fn get_counts(&mut self) -> Result<Arc<CountsResponse>, Error> {
@@ -234,7 +252,7 @@ impl RsPixel {
     }
 
     pub async fn get_status(&mut self, uuid: &str) -> Result<Arc<StatusResponse>, Error> {
-        self.get(HypixelEndpoint::STATUS, json!({ "uuid": uuid }))
+        self.get(HypixelEndpoint::STATUS, self.get_params("uuid", uuid))
             .await
     }
 
@@ -242,7 +260,7 @@ impl RsPixel {
         &mut self,
         uuid: &str,
     ) -> Result<Arc<RecentGamesResponse>, Error> {
-        self.get(HypixelEndpoint::RECENT_GAMES, json!({ "uuid": uuid }))
+        self.get(HypixelEndpoint::RECENT_GAMES, self.get_params("uuid", uuid))
             .await
     }
 
@@ -250,8 +268,11 @@ impl RsPixel {
         &mut self,
         uuid: &str,
     ) -> Result<Arc<SkyblockProfilesResponse>, Error> {
-        self.get(HypixelEndpoint::SKYBLOCK_PROFILES, json!({ "uuid": uuid }))
-            .await
+        self.get(
+            HypixelEndpoint::SKYBLOCK_PROFILES,
+            self.get_params("uuid", uuid),
+        )
+        .await
     }
 
     pub async fn get_skyblock_profile(
@@ -260,7 +281,7 @@ impl RsPixel {
     ) -> Result<Arc<SkyblockProfileResponse>, Error> {
         self.get(
             HypixelEndpoint::SKYBLOCK_PROFILE,
-            json!({ "profile": profile }),
+            self.get_params("profile", profile),
         )
         .await
     }
@@ -269,8 +290,11 @@ impl RsPixel {
         &mut self,
         uuid: &str,
     ) -> Result<Arc<SkyblockBingoResponse>, Error> {
-        self.get(HypixelEndpoint::SKYBLOCK_BINGO, json!({ "uuid": uuid }))
-            .await
+        self.get(
+            HypixelEndpoint::SKYBLOCK_BINGO,
+            self.get_params("uuid", uuid),
+        )
+        .await
     }
 
     pub async fn get_skyblock_news(&mut self) -> Result<Arc<SkyblockNewsResponse>, Error> {
@@ -281,8 +305,11 @@ impl RsPixel {
         &mut self,
         page: i64,
     ) -> Result<Arc<SkyblockAuctionsResponse>, Error> {
-        self.get(HypixelEndpoint::SKYBLOCK_AUCTIONS, json!({ "page": page }))
-            .await
+        self.get(
+            HypixelEndpoint::SKYBLOCK_AUCTIONS,
+            self.get_params("page", &page.to_string()),
+        )
+        .await
     }
 
     pub async fn get_skyblock_auctions_ended(
