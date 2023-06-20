@@ -84,7 +84,7 @@ impl RsPixel {
         }
     }
 
-    async fn get<T>(
+    pub async fn get<T>(
         &mut self,
         endpoint: HypixelEndpoint,
         params: HashMap<String, String>,
@@ -172,7 +172,7 @@ impl RsPixel {
         }
     }
 
-    async fn simple_get<T>(&mut self, path: HypixelEndpoint) -> Result<Arc<T>, Error>
+    pub async fn simple_get<T>(&mut self, path: HypixelEndpoint) -> Result<Arc<T>, Error>
     where
         for<'a> T: DeserializeOwned + Send + Sync + 'a,
     {
