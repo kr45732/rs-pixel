@@ -27,8 +27,6 @@ pub struct SkyblockProfile {
         default = "Default::default"
     )]
     pub game_mode: Gamemode,
-    #[serde(skip_deserializing)]
-    uuid: Option<String>,
 }
 
 fn deserialize_gamemode<'de, D>(deserializer: D) -> Result<Gamemode, D::Error>
