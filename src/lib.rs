@@ -70,7 +70,7 @@ impl RsPixel {
         minecraft::uuid_to_username(self, uuid).await
     }
 
-    fn get_params(&self, key: &str, value: &str) -> HashMap<String, String> {
+    pub fn to_params(&self, key: &str, value: &str) -> HashMap<String, String> {
         let mut params = HashMap::new();
         params.insert(key.to_string(), value.to_string());
         params
@@ -196,21 +196,21 @@ impl RsPixel {
     }
 
     pub async fn get_player(&mut self, uuid: &str) -> Result<Arc<PlayerResponse>, Error> {
-        self.get(HypixelEndpoint::PLAYER, self.get_params("uuid", uuid))
+        self.get(HypixelEndpoint::PLAYER, self.to_params("uuid", uuid))
             .await
     }
     pub async fn get_guild_by_player(&mut self, player: &str) -> Result<Arc<GuildResponse>, Error> {
-        self.get(HypixelEndpoint::GUILD, self.get_params("player", player))
+        self.get(HypixelEndpoint::GUILD, self.to_params("player", player))
             .await
     }
 
     pub async fn get_guild_by_name(&mut self, name: &str) -> Result<Arc<GuildResponse>, Error> {
-        self.get(HypixelEndpoint::GUILD, self.get_params("name", name))
+        self.get(HypixelEndpoint::GUILD, self.to_params("name", name))
             .await
     }
 
     pub async fn get_guild_by_id(&mut self, id: &str) -> Result<Arc<GuildResponse>, Error> {
-        self.get(HypixelEndpoint::GUILD, self.get_params("id", id))
+        self.get(HypixelEndpoint::GUILD, self.to_params("id", id))
             .await
     }
 
@@ -220,7 +220,7 @@ impl RsPixel {
     ) -> Result<Arc<SkyblockAuctionResponse>, Error> {
         self.get(
             HypixelEndpoint::SKYBLOCK_AUCTION,
-            self.get_params("uuid", uuid),
+            self.to_params("uuid", uuid),
         )
         .await
     }
@@ -231,7 +231,7 @@ impl RsPixel {
     ) -> Result<Arc<SkyblockAuctionResponse>, Error> {
         self.get(
             HypixelEndpoint::SKYBLOCK_AUCTION,
-            self.get_params("player", player),
+            self.to_params("player", player),
         )
         .await
     }
@@ -242,7 +242,7 @@ impl RsPixel {
     ) -> Result<Arc<SkyblockAuctionResponse>, Error> {
         self.get(
             HypixelEndpoint::SKYBLOCK_AUCTION,
-            self.get_params("profile", profile),
+            self.to_params("profile", profile),
         )
         .await
     }
@@ -252,7 +252,7 @@ impl RsPixel {
     }
 
     pub async fn get_status(&mut self, uuid: &str) -> Result<Arc<StatusResponse>, Error> {
-        self.get(HypixelEndpoint::STATUS, self.get_params("uuid", uuid))
+        self.get(HypixelEndpoint::STATUS, self.to_params("uuid", uuid))
             .await
     }
 
@@ -260,7 +260,7 @@ impl RsPixel {
         &mut self,
         uuid: &str,
     ) -> Result<Arc<RecentGamesResponse>, Error> {
-        self.get(HypixelEndpoint::RECENT_GAMES, self.get_params("uuid", uuid))
+        self.get(HypixelEndpoint::RECENT_GAMES, self.to_params("uuid", uuid))
             .await
     }
 
@@ -270,7 +270,7 @@ impl RsPixel {
     ) -> Result<Arc<SkyblockProfilesResponse>, Error> {
         self.get(
             HypixelEndpoint::SKYBLOCK_PROFILES,
-            self.get_params("uuid", uuid),
+            self.to_params("uuid", uuid),
         )
         .await
     }
@@ -281,7 +281,7 @@ impl RsPixel {
     ) -> Result<Arc<SkyblockProfileResponse>, Error> {
         self.get(
             HypixelEndpoint::SKYBLOCK_PROFILE,
-            self.get_params("profile", profile),
+            self.to_params("profile", profile),
         )
         .await
     }
@@ -292,7 +292,7 @@ impl RsPixel {
     ) -> Result<Arc<SkyblockBingoResponse>, Error> {
         self.get(
             HypixelEndpoint::SKYBLOCK_BINGO,
-            self.get_params("uuid", uuid),
+            self.to_params("uuid", uuid),
         )
         .await
     }
@@ -307,7 +307,7 @@ impl RsPixel {
     ) -> Result<Arc<SkyblockAuctionsResponse>, Error> {
         self.get(
             HypixelEndpoint::SKYBLOCK_AUCTIONS,
-            self.get_params("page", &page.to_string()),
+            self.to_params("page", &page.to_string()),
         )
         .await
     }
