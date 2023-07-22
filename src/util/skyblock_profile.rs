@@ -10,7 +10,7 @@ use crate::{
 };
 
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_json::{Map, Value};
+use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -27,8 +27,6 @@ pub struct SkyblockProfile {
         default = "Default::default"
     )]
     pub game_mode: Gamemode,
-    #[serde(skip_deserializing)]
-    uuid: Option<String>,
 }
 
 fn deserialize_gamemode<'de, D>(deserializer: D) -> Result<Gamemode, D::Error>
@@ -51,73 +49,24 @@ impl Raw for SkyblockProfile {
 }
 
 impl SkyblockProfile {
-    pub fn set_uuid(&mut self, uuid: &str) {
-        self.uuid = Some(uuid.to_string());
+    pub fn get_purse_coins(&self, uuid: &str) -> Option<f64> {
+        self.get_float_property(&format!("{uuid}.coin_purse"))
     }
 
-    pub fn get_player_property(&self, full_path: &str) -> Option<&Value> {
-        if let Some(uuid) = &self.uuid {
-            self.get_property(format!("{}.{}", uuid, full_path).as_str())
-        } else {
-            None
-        }
+    pub fn get_skill(&self, uuid: &str, skill_name: &str) -> Option<LevelingStruct> {
+        self.get_int_property(&format!(
+            "{}.experience_skill_{}",
+            uuid,
+            if skill_name == "social" {
+                "social2"
+            } else {
+                skill_name
+            }
+        ))
+        .map(|skill_exp| self.skill_exp_to_info(uuid, skill_name, skill_exp))
     }
 
-    pub fn get_player_str_property(&self, full_path: &str) -> Option<&str> {
-        self.get_player_property(full_path)
-            .and_then(serde_json::Value::as_str)
-    }
-
-    pub fn get_player_int_property(&self, full_path: &str) -> Option<i64> {
-        self.get_player_property(full_path)
-            .and_then(serde_json::Value::as_i64)
-            .or_else(|| {
-                self.get_player_property(full_path)
-                    .and_then(serde_json::Value::as_f64)
-                    .map(|v| v as i64)
-            })
-    }
-
-    pub fn get_player_float_property(&self, full_path: &str) -> Option<f64> {
-        self.get_player_property(full_path)
-            .and_then(serde_json::Value::as_f64)
-            .or_else(|| {
-                self.get_player_property(full_path)
-                    .and_then(serde_json::Value::as_i64)
-                    .map(|v| v as f64)
-            })
-    }
-
-    pub fn get_player_array_property(&self, full_path: &str) -> Option<&Vec<Value>> {
-        self.get_player_property(full_path)
-            .and_then(serde_json::Value::as_array)
-    }
-
-    pub fn get_player_object_property(&self, full_path: &str) -> Option<&Map<String, Value>> {
-        self.get_player_property(full_path)
-            .and_then(serde_json::Value::as_object)
-    }
-
-    pub fn get_purse_coins(&self) -> Option<f64> {
-        self.get_player_float_property("coin_purse")
-    }
-
-    pub fn get_skill(&self, skill_name: &str) -> Option<LevelingStruct> {
-        self.get_player_int_property(
-            format!(
-                "experience_skill_{}",
-                if skill_name == "social" {
-                    "social2"
-                } else {
-                    skill_name
-                }
-            )
-            .as_str(),
-        )
-        .map(|skill_exp| self.skill_exp_to_info(skill_name, skill_exp))
-    }
-
-    fn skill_exp_to_info(&self, skill_name: &str, skill_exp: i64) -> LevelingStruct {
+    fn skill_exp_to_info(&self, uuid: &str, skill_name: &str, skill_exp: i64) -> LevelingStruct {
         let leveling_table = match skill_name {
             "catacombs" => *CATACOMBS_EXP,
             "runecrafting" => *RUNECRAFTING_EXP,
@@ -125,7 +74,7 @@ impl SkyblockProfile {
             "hotm" => *HOTM_EXP,
             _ => *LEVELING_EXP,
         };
-        let max_level = self.get_max_level(skill_name);
+        let max_level = self.get_max_level(uuid, skill_name);
 
         if skill_exp == 0 {
             return LevelingStruct {
@@ -177,26 +126,26 @@ impl SkyblockProfile {
         }
     }
 
-    pub fn get_max_level(&self, name: &str) -> i64 {
+    pub fn get_max_level(&self, uuid: &str, name: &str) -> i64 {
         LEVELING_CAPS.get(name).unwrap_or(&50)
             + if name == "farming" {
-                self.get_farming_cap_upgrade()
+                self.get_farming_cap_upgrade(uuid)
             } else {
                 0
             }
     }
 
-    pub fn get_farming_cap_upgrade(&self) -> i64 {
-        self.get_player_int_property("jacob2.perks.farming_level_cap")
+    pub fn get_farming_cap_upgrade(&self, uuid: &str) -> i64 {
+        self.get_int_property(&format!("{uuid}.jacob2.perks.farming_level_cap"))
             .unwrap_or(0)
     }
 
-    pub fn get_hotm(&self) -> Option<LevelingStruct> {
-        self.get_player_int_property("mining_core.experience")
-            .map(|exp| self.skill_exp_to_info("hotm", exp))
+    pub fn get_hotm(&self, uuid: &str) -> Option<LevelingStruct> {
+        self.get_int_property(&format!("{uuid}.mining_core.experience"))
+            .map(|exp| self.skill_exp_to_info(uuid, "hotm", exp))
     }
 
-    fn slayer_exp_to_info(&self, slayer_name: &str, slayer_exp: i64) -> LevelingStruct {
+    fn slayer_exp_to_info(&self, uuid: &str, slayer_name: &str, slayer_exp: i64) -> LevelingStruct {
         let leveling_table = match slayer_name {
             "zombie" => *ZOMBIE_EXP,
             "wolf" => *WOLF_EXP,
@@ -204,7 +153,7 @@ impl SkyblockProfile {
             "enderman" => *ENDERMAN_EXP,
             _ => *BLAZE_EXP,
         };
-        let max_level = self.get_max_level(slayer_name);
+        let max_level = self.get_max_level(uuid, slayer_name);
 
         if slayer_exp == 0 {
             return LevelingStruct {
@@ -256,81 +205,83 @@ impl SkyblockProfile {
         }
     }
 
-    pub fn get_slayer(&self, slayer_name: &str) -> Option<LevelingStruct> {
-        self.get_player_int_property(format!("slayer_bosses.{}.xp", slayer_name).as_str())
-            .map(|exp| self.slayer_exp_to_info(slayer_name, exp))
+    pub fn get_slayer(&self, uuid: &str, slayer_name: &str) -> Option<LevelingStruct> {
+        self.get_int_property(&format!("{uuid}.slayer_bosses.{slayer_name}.xp"))
+            .map(|exp| self.slayer_exp_to_info(uuid, slayer_name, exp))
     }
 
-    pub fn get_catacombs(&self) -> Option<LevelingStruct> {
-        self.get_player_int_property("dungeons.dungeon_types.catacombs.experience")
-            .map(|exp| self.skill_exp_to_info("catacombs", exp))
+    pub fn get_catacombs(&self, uuid: &str) -> Option<LevelingStruct> {
+        self.get_int_property(&format!(
+            "{uuid}.dungeons.dungeon_types.catacombs.experience"
+        ))
+        .map(|exp| self.skill_exp_to_info(uuid, "catacombs", exp))
     }
 
-    pub fn get_dungeon_class(&self, class_name: &str) -> Option<LevelingStruct> {
-        self.get_player_int_property(
-            format!("dungeons.player_classes.{}.experience", class_name).as_str(),
-        )
-        .map(|exp| self.skill_exp_to_info("catacombs", exp))
+    pub fn get_dungeon_class(&self, uuid: &str, class_name: &str) -> Option<LevelingStruct> {
+        self.get_int_property(&format!(
+            "{uuid}.dungeons.player_classes.{class_name}.experience"
+        ))
+        .map(|exp| self.skill_exp_to_info(uuid, "catacombs", exp))
     }
 
-    pub fn get_inventory(&self) -> Option<Value> {
-        if let Some(data) = self.get_player_str_property("inv_contents.data") {
+    pub fn get_inventory(&self, uuid: &str) -> Option<Value> {
+        if let Some(data) = self.get_str_property(&format!("{uuid}.inv_contents.data")) {
             parse_nbt(data)
         } else {
             None
         }
     }
 
-    pub fn get_personal_vault(&self) -> Option<Value> {
-        if let Some(data) = self.get_player_str_property("personal_vault_contents.data") {
+    pub fn get_personal_vault(&self, uuid: &str) -> Option<Value> {
+        if let Some(data) = self.get_str_property(&format!("{uuid}.personal_vault_contents.data")) {
             parse_nbt(data)
         } else {
             None
         }
     }
 
-    pub fn get_talisman_bag(&self) -> Option<Value> {
-        if let Some(data) = self.get_player_str_property("talisman_bag.data") {
+    pub fn get_talisman_bag(&self, uuid: &str) -> Option<Value> {
+        if let Some(data) = self.get_str_property(&format!("{uuid}.talisman_bag.data")) {
             parse_nbt(data)
         } else {
             None
         }
     }
 
-    pub fn get_equippment(&self) -> Option<Value> {
-        if let Some(data) = self.get_player_str_property("equippment_contents.data") {
+    pub fn get_equippment(&self, uuid: &str) -> Option<Value> {
+        if let Some(data) = self.get_str_property(&format!("{uuid}.equippment_contents.data")) {
             parse_nbt(data)
         } else {
             None
         }
     }
 
-    pub fn get_armor(&self) -> Option<Value> {
-        if let Some(data) = self.get_player_str_property("inv_armor.data") {
+    pub fn get_armor(&self, uuid: &str) -> Option<Value> {
+        if let Some(data) = self.get_str_property(&format!("{uuid}.inv_armor.data")) {
             parse_nbt(data)
         } else {
             None
         }
     }
 
-    pub fn get_wardrobe(&self) -> Option<Value> {
-        if let Some(data) = self.get_player_str_property("wardrobe_contents.data") {
+    pub fn get_wardrobe(&self, uuid: &str) -> Option<Value> {
+        if let Some(data) = self.get_str_property(&format!("{uuid}.wardrobe_contents.data")) {
             parse_nbt(data)
         } else {
             None
         }
     }
 
-    pub fn get_ender_chest(&self) -> Option<Value> {
-        if let Some(data) = self.get_player_str_property("ender_chest_contents.data") {
+    pub fn get_ender_chest(&self, uuid: &str) -> Option<Value> {
+        if let Some(data) = self.get_str_property(&format!("{uuid}.ender_chest_contents.data")) {
             parse_nbt(data)
         } else {
             None
         }
     }
 
-    pub fn get_storage(&self) -> Option<HashMap<&str, Value>> {
-        if let Some(data) = self.get_player_object_property("backpack_contents") {
+    pub fn get_storage(&self, uuid: &str) -> Option<HashMap<&str, Value>> {
+        if let Some(data) = self.get_object_property(&format!("{uuid}.backpack_contents")) {
             let mut storage = HashMap::new();
             for ele in data {
                 if let Some(bp) = parse_nbt(
@@ -348,8 +299,8 @@ impl SkyblockProfile {
         }
     }
 
-    pub fn get_sacks(&self) -> Option<HashMap<&str, i64>> {
-        if let Some(data) = self.get_object_property("sacks_counts") {
+    pub fn get_sacks(&self, uuid: &str) -> Option<HashMap<&str, i64>> {
+        if let Some(data) = self.get_object_property(&format!("{uuid}.sacks_counts")) {
             let mut sacks = HashMap::new();
             for ele in data {
                 sacks.insert(&**ele.0, ele.1.as_i64().unwrap_or(0));
@@ -360,8 +311,8 @@ impl SkyblockProfile {
         }
     }
 
-    pub fn get_pets(&self) -> Option<Vec<PetStruct>> {
-        if let Some(pets) = self.get_player_array_property("pets") {
+    pub fn get_pets(&self, uuid: &str) -> Option<Vec<PetStruct>> {
+        if let Some(pets) = self.get_array_property(&format!("{uuid}.pets")) {
             let mut parsed_pets = Vec::new();
             for pet in pets {
                 let rarity = pet.get_string_property("tier").unwrap();
@@ -444,8 +395,8 @@ impl SkyblockProfile {
         }
     }
 
-    pub fn get_fairy_souls(&self) -> i64 {
-        self.get_player_int_property("fairy_souls_collected")
+    pub fn get_fairy_souls(&self, uuid: &str) -> i64 {
+        self.get_int_property(&format!("{uuid}.fairy_souls_collected"))
             .unwrap_or(0)
     }
 
@@ -461,7 +412,7 @@ impl SkyblockProfile {
         }
 
         let mut max = 0;
-        for i in max..CRAFTED_MINIONS_TO_SLOTS.len() {
+        for i in 0..CRAFTED_MINIONS_TO_SLOTS.len() {
             if &(unique_minions.len() as i64) < CRAFTED_MINIONS_TO_SLOTS.get(i).unwrap() {
                 break;
             }
@@ -472,10 +423,10 @@ impl SkyblockProfile {
         (max as i64) + 5
     }
 
-    pub fn get_pet_score(&self) -> i64 {
+    pub fn get_pet_score(&self, uuid: &str) -> i64 {
         let mut pets_map = HashMap::new();
 
-        if let Some(pets) = self.get_pets() {
+        if let Some(pets) = self.get_pets(uuid) {
             for ele in pets {
                 let rarity = match ele.rarity.to_lowercase().as_str() {
                     "common" => 1,

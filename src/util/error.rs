@@ -8,6 +8,7 @@ pub enum Error {
     Status(u16, String),
     RateLimit(i64),
     Unknown(String),
+    UnknownResource,
 }
 
 impl std::error::Error for Error {}
@@ -42,12 +43,12 @@ impl fmt::Display for Error {
             Error::Client(ref err) => err.fmt(f),
             Error::Parse(ref err) => err.fmt(f),
             Error::Unknown(ref err) => err.fmt(f),
-            Error::Status(ref code, ref err) => write!(f, "{} {}", code, err),
+            Error::Status(ref code, ref err) => write!(f, "{code} {err}"),
             Error::RateLimit(ref time_till_reset) => write!(
                 f,
-                "Reached the rate limit; {} seconds till reset",
-                time_till_reset
+                "Reached the rate limit; {time_till_reset} seconds till reset"
             ),
+            Error::UnknownResource => write!(f, "Unknown resource provided"),
         }
     }
 }

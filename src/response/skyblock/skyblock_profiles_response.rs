@@ -8,22 +8,8 @@ pub struct SkyblockProfilesResponse {
 }
 
 impl SkyblockProfilesResponse {
-    pub fn set_uuid(&mut self, uuid: &str) {
-        for i in 0..self.profiles.len() {
-            if let Some(profile) = self.profiles.get_mut(i) {
-                profile.set_uuid(uuid);
-            }
-        }
-    }
-
     pub fn get_selected_profile(&self) -> Option<&SkyblockProfile> {
-        for profile in &self.profiles {
-            if profile.selected {
-                return Some(profile);
-            }
-        }
-
-        None
+        self.profiles.iter().find(|&profile| profile.selected)
     }
 
     pub fn get_profile_by_name(&self, profile_name: &str) -> Option<&SkyblockProfile> {

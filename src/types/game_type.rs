@@ -1,11 +1,67 @@
 use serde::{
     de::{self, Visitor},
-    Deserialize, Deserializer, Serialize,
+    Deserialize, Deserializer, Serialize, Serializer,
 };
-use std::{borrow::Cow, fmt};
+use std::fmt;
 
-#[derive(Serialize, Debug, PartialEq, Eq, Hash)]
-pub struct GameType(Cow<'static, str>, Cow<'static, str>, i64);
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct GameType(&'static str, &'static str, &'static str, i64);
+
+impl GameType {
+    pub fn name(&self) -> String {
+        self.1.to_string()
+    }
+
+    pub fn db_name(&self) -> String {
+        self.2.to_string()
+    }
+
+    pub fn id(&self) -> i64 {
+        self.3
+    }
+
+    pub const QUAKECRAFT: Self = Self("QUAKECRAFT", "Quakecraft", "Quake", 2);
+    pub const WALLS: Self = Self("WALLS", "Walls", "Walls", 3);
+    pub const PAINTBALL: Self = Self("PAINTBALL", "Paintball", "Paintball", 4);
+    pub const SURVIVAL_GAMES: Self =
+        Self("SURVIVAL_GAMES", "Blitz Survival Games", "HungerGames", 5);
+    pub const TNTGAMES: Self = Self("TNTGAMES", "The TNT Games", "TNTGames", 6);
+    pub const VAMPIREZ: Self = Self("VAMPIREZ", "VampireZ", "VampireZ", 7);
+    pub const WALLS3: Self = Self("WALLS3", "Mega Walls", "Walls3", 13);
+    pub const ARCADE: Self = Self("ARCADE", "Arcade", "Arcade", 14);
+    pub const ARENA: Self = Self("ARENA", "Arena Brawl", "Arena", 17);
+    pub const MCGO: Self = Self("MCGO", "Cops and Crims", "MCGO", 21);
+    pub const UHC: Self = Self("UHC", "UHC Champions", "UHC", 20);
+    pub const BATTLEGROUND: Self = Self("BATTLEGROUND", "Warlords", "Battleground", 23);
+    pub const SUPER_SMASH: Self = Self("SUPER_SMASH", "Smash Heroes", "SuperSmash", 24);
+    pub const GINGERBREAD: Self = Self("GINGERBREAD", "Turbo Kart Racers", "GingerBread", 25);
+    pub const HOUSING: Self = Self("HOUSING", "Housing", "Housing", 26);
+    pub const SKYWARS: Self = Self("SKYWARS", "SkyWars", "SkyWars", 51);
+    pub const TRUE_COMBAT: Self = Self("TRUE_COMBAT", "Crazy Walls", "TrueCombat", 52);
+    pub const SPEED_UHC: Self = Self("SPEED_UHC", "Speed UHC", "SpeedUHC", 54);
+    pub const SKYCLASH: Self = Self("SKYCLASH", "SkyClash", "SkyClash", 55);
+    pub const LEGACY: Self = Self("LEGACY", "Classic Games", "Legacy", 56);
+    pub const PROTOTYPE: Self = Self("PROTOTYPE", "Prototype", "Prototype", 57);
+    pub const BEDWARS: Self = Self("BEDWARS", "Bed Wars", "Bedwars", 58);
+    pub const MURDER_MYSTERY: Self = Self("MURDER_MYSTERY", "Murder Mystery", "MurderMystery", 59);
+    pub const BUILD_BATTLE: Self = Self("BUILD_BATTLE", "Build Battle", "BuildBattle", 60);
+    pub const DUELS: Self = Self("DUELS", "Duels", "Duels", 61);
+    pub const SKYBLOCK: Self = Self("SKYBLOCK", "SkyBlock", "SkyBlock", 63);
+    pub const PIT: Self = Self("PIT", "Pit", "Pit", 64);
+    pub const REPLAY: Self = Self("REPLAY", "Replay", "Replay", 65);
+    pub const SMP: Self = Self("SMP", "SMP", "SMP", 67);
+    pub const WOOL_GAMES: Self = Self("WOOL_GAMES", "Wool Wars", "WoolGames", 68);
+    pub const UNKNOWN: Self = Self("UNKNOWN", "Unknown", "Unknown", -1);
+}
+
+impl Serialize for GameType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.0)
+    }
+}
 
 impl<'de> Deserialize<'de> for GameType {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -87,8 +143,7 @@ impl From<u64> for GameType {
 
 impl From<String> for GameType {
     fn from(v: String) -> Self {
-        let v_str = v.as_str();
-        match v_str {
+        match v.as_str() {
             "QUAKECRAFT" => GameType::QUAKECRAFT,
             "WALLS" => GameType::WALLS,
             "PAINTBALL" => GameType::PAINTBALL,
@@ -122,54 +177,4 @@ impl From<String> for GameType {
             _ => GameType::UNKNOWN,
         }
     }
-}
-
-impl GameType {
-    pub const fn new(name: &'static str, db_name: &'static str, id: i64) -> GameType {
-        GameType(Cow::Borrowed(name), Cow::Borrowed(db_name), id)
-    }
-
-    pub fn name(&self) -> String {
-        self.0.to_string()
-    }
-
-    pub fn db_name(&self) -> String {
-        self.1.to_string()
-    }
-
-    pub fn id(&self) -> i64 {
-        self.2
-    }
-
-    pub const QUAKECRAFT: GameType = GameType::new("Quakecraft", "Quake", 2);
-    pub const WALLS: GameType = GameType::new("Walls", "Walls", 3);
-    pub const PAINTBALL: GameType = GameType::new("Paintball", "Paintball", 4);
-    pub const SURVIVAL_GAMES: GameType = GameType::new("Blitz Survival Games", "HungerGames", 5);
-    pub const TNTGAMES: GameType = GameType::new("The TNT Games", "TNTGames", 6);
-    pub const VAMPIREZ: GameType = GameType::new("VampireZ", "VampireZ", 7);
-    pub const WALLS3: GameType = GameType::new("Mega Walls", "Walls3", 13);
-    pub const ARCADE: GameType = GameType::new("Arcade", "Arcade", 14);
-    pub const ARENA: GameType = GameType::new("Arena Brawl", "Arena", 17);
-    pub const MCGO: GameType = GameType::new("Cops and Crims", "MCGO", 21);
-    pub const UHC: GameType = GameType::new("UHC Champions", "UHC", 20);
-    pub const BATTLEGROUND: GameType = GameType::new("Warlords", "Battleground", 23);
-    pub const SUPER_SMASH: GameType = GameType::new("Smash Heroes", "SuperSmash", 24);
-    pub const GINGERBREAD: GameType = GameType::new("Turbo Kart Racers", "GingerBread", 25);
-    pub const HOUSING: GameType = GameType::new("Housing", "Housing", 26);
-    pub const SKYWARS: GameType = GameType::new("SkyWars", "SkyWars", 51);
-    pub const TRUE_COMBAT: GameType = GameType::new("Crazy Walls", "TrueCombat", 52);
-    pub const SPEED_UHC: GameType = GameType::new("Speed UHC", "SpeedUHC", 54);
-    pub const SKYCLASH: GameType = GameType::new("SkyClash", "SkyClash", 55);
-    pub const LEGACY: GameType = GameType::new("Classic Games", "Legacy", 56);
-    pub const PROTOTYPE: GameType = GameType::new("Prototype", "Prototype", 57);
-    pub const BEDWARS: GameType = GameType::new("Bed Wars", "Bedwars", 58);
-    pub const MURDER_MYSTERY: GameType = GameType::new("Murder Mystery", "MurderMystery", 59);
-    pub const BUILD_BATTLE: GameType = GameType::new("Build Battle", "BuildBattle", 60);
-    pub const DUELS: GameType = GameType::new("Duels", "Duels", 61);
-    pub const SKYBLOCK: GameType = GameType::new("SkyBlock", "SkyBlock", 63);
-    pub const PIT: GameType = GameType::new("Pit", "Pit", 64);
-    pub const REPLAY: GameType = GameType::new("Replay", "Replay", 65);
-    pub const SMP: GameType = GameType::new("SMP", "SMP", 67);
-    pub const WOOL_GAMES: GameType = GameType::new("Wool Wars", "WoolGames", 68);
-    pub const UNKNOWN: GameType = GameType::new("Unknown", "Unknown", -1);
 }

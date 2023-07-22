@@ -3,10 +3,31 @@ use crate::RsPixel;
 use serde_json::Value;
 
 pub async fn username_to_uuid(rs_pixel: &RsPixel, username: &str) -> Result<Response, Error> {
+    if let Some(uuid_to_username_cache) = &rs_pixel.config.uuid_to_username_cache {
+        if let Some(cache_entry) = uuid_to_username_cache
+            .iter()
+            .find(|e| e.1.eq_ignore_ascii_case(username))
+        {
+            return Ok(Response {
+                username: cache_entry.1,
+                uuid: cache_entry.0.to_string(),
+            });
+        }
+    }
+
     uuid_username(rs_pixel, username, false).await
 }
 
 pub async fn uuid_to_username(rs_pixel: &RsPixel, uuid: &str) -> Result<Response, Error> {
+    if let Some(uuid_to_username_cache) = &rs_pixel.config.uuid_to_username_cache {
+        if let Some(username) = uuid_to_username_cache.get(uuid) {
+            return Ok(Response {
+                username,
+                uuid: uuid.to_string(),
+            });
+        }
+    }
+
     uuid_username(rs_pixel, uuid, true).await
 }
 
@@ -21,22 +42,16 @@ async fn uuid_username(
         .get(match rs_pixel.config.minecraft_api_type {
             ApiType::Mojang => {
                 if is_uuid {
-                    format!(
-                        "https://api.mojang.com/user/profiles/{}/names",
-                        uuid_username
-                    )
+                    format!("https://api.mojang.com/user/profiles/{uuid_username}/names")
                 } else {
-                    format!(
-                        "https://api.mojang.com/users/profiles/minecraft/{}",
-                        uuid_username
-                    )
+                    format!("https://api.mojang.com/users/profiles/minecraft/{uuid_username}")
                 }
             }
             ApiType::Ashcon => {
-                format!("https://api.ashcon.app/mojang/v2/user/{}", uuid_username)
+                format!("https://api.ashcon.app/mojang/v2/user/{uuid_username}")
             }
             ApiType::PlayerDb => {
-                format!("https://playerdb.co/api/player/minecraft/{}", uuid_username)
+                format!("https://playerdb.co/api/player/minecraft/{uuid_username}")
             }
         })
         .send()
@@ -131,7 +146,9 @@ pub struct Response {
     pub uuid: String,
 }
 
+#[derive(Default)]
 pub enum ApiType {
+    #[default]
     Mojang,
     Ashcon,
     PlayerDb,

@@ -28,12 +28,15 @@ where
 
         for path in paths {
             if cur_raw.is_array() {
-                if let Ok(idx) = path.parse::<usize>() {
-                    match cur_raw.get(idx) {
-                        Some(new_raw) => cur_raw = new_raw,
-                        None => return None,
-                    };
-                    continue;
+                match path.parse::<usize>() {
+                    Ok(idx) => {
+                        match cur_raw.get(idx) {
+                            Some(new_raw) => cur_raw = new_raw,
+                            None => return None,
+                        };
+                        continue;
+                    }
+                    Err(_) => return None,
                 }
             }
 
@@ -58,23 +61,23 @@ where
     }
 
     fn get_int_property(&self, full_path: &str) -> Option<i64> {
-        self.get_property(full_path)
-            .and_then(serde_json::Value::as_i64)
-            .or_else(|| {
-                self.get_property(full_path)
-                    .and_then(serde_json::Value::as_f64)
-                    .map(|v| v as i64)
-            })
+        self.get_property(full_path).and_then(|v| {
+            if v.is_i64() {
+                v.as_i64()
+            } else {
+                v.as_f64().map(|f| f as i64)
+            }
+        })
     }
 
     fn get_float_property(&self, full_path: &str) -> Option<f64> {
-        self.get_property(full_path)
-            .and_then(serde_json::Value::as_f64)
-            .or_else(|| {
-                self.get_property(full_path)
-                    .and_then(serde_json::Value::as_i64)
-                    .map(|v| v as f64)
-            })
+        self.get_property(full_path).and_then(|v| {
+            if v.is_f64() {
+                v.as_f64()
+            } else {
+                v.as_i64().map(|f| f as f64)
+            }
+        })
     }
 
     fn get_array_property(&self, full_path: &str) -> Option<&Vec<Value>> {
