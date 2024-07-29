@@ -54,12 +54,12 @@ impl RsPixel {
     }
 
     pub async fn from_config(key: impl Into<String>, config: Config) -> Result<RsPixel, Error> {
-        let mut rs_pixel = RsPixel {
+        let rs_pixel = RsPixel {
             config,
             key: Key::new(key),
         };
 
-        rs_pixel.get_key().await.map(|_| rs_pixel)
+        Ok(rs_pixel)
     }
 
     pub async fn username_to_uuid(&self, username: &str) -> Result<Response, Error> {
@@ -179,7 +179,9 @@ impl RsPixel {
         self.get(path, HashMap::new()).await
     }
 
+    #[deprecated]
     pub async fn get_key(&mut self) -> Result<Arc<KeyResponse>, Error> {
+        #[allow(deprecated)]
         self.simple_get(HypixelEndpoint::KEY).await
     }
 
@@ -346,6 +348,7 @@ impl HypixelEndpoint {
         self.0.to_string()
     }
 
+    #[deprecated]
     pub const KEY: Self = Self("key", true);
     pub const BOOSTERS: Self = Self("boosters", true);
     pub const LEADERBOARDS: Self = Self("leaderboards", true);
